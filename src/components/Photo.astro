@@ -10,11 +10,13 @@ interface Props {
   ratio?: string;
   class?: string;
   eager?: boolean;
+  /** Full-bleed background use: fills its parent, label tucked into a corner. */
+  bg?: boolean;
 }
-const { src, alt = '', label, ratio = '4 / 3', class: className = '', eager = false } = Astro.props;
+const { src, alt = '', label, ratio = '4 / 3', class: className = '', eager = false, bg = false } = Astro.props;
 ---
 
-<figure class:list={['photo', className]} style={`--ratio: ${ratio}`}>
+<figure class:list={['photo', { 'photo--bg': bg }, className]} style={`--ratio: ${ratio}`}>
   {
     src ? (
       <img src={src} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" />
@@ -42,6 +44,25 @@ const { src, alt = '', label, ratio = '4 / 3', class: className = '', eager = fa
     object-fit: cover;
   }
 
+  .photo--bg {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
+  }
+
+  .photo--bg .photo__slot {
+    place-content: end;
+    justify-items: end;
+    text-align: right;
+    padding: 1.25rem var(--gutter);
+    outline-offset: -14px;
+  }
+
+  .photo--bg .photo__slot :global(svg) {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+
   .photo__slot {
     height: 100%;
     display: grid;
@@ -59,7 +80,7 @@ const { src, alt = '', label, ratio = '4 / 3', class: className = '', eager = fa
   .photo__slot :global(svg) {
     width: 2rem;
     height: 2rem;
-    color: var(--amber);
+    color: var(--on-slate-2);
   }
 
   .photo__label {

@@ -1,7 +1,7 @@
 ---
 import Icon from './Icon.astro';
 import Fill from './Fill.astro';
-import { business, displayName, nav, services, areas, telHref, bookHref } from '../data/site';
+import { business, nav, services, areas, telHref, bookHref } from '../data/site';
 const year = new Date().getFullYear();
 ---
 
@@ -45,7 +45,7 @@ const year = new Date().getFullYear();
 
   <div class="wrap site-footer__legal">
     <p>
-      © {year} {displayName}. CA Contractor License <Fill value={business.license ? `#${business.license}` : ''} label="#000000" />.
+      © {year} <Fill value={business.name} label="Company name" />. CA Contractor License <Fill value={business.license ? `#${business.license}` : ''} label="#000000" />.
       Licensed and insured.
     </p>
   </div>
@@ -106,7 +106,7 @@ const year = new Date().getFullYear();
   .site-footer__contact :global(svg) {
     width: 1.05rem;
     height: 1.05rem;
-    color: var(--amber);
+    color: var(--on-slate-2);
     flex: none;
     transform: translateY(0.15em);
   }

@@ -23,7 +23,7 @@ const uid = id;
 >
   <div class="estimate__head">
     <h2 class="estimate__title">{heading}</h2>
-    <p class="estimate__sub">No cost, no pressure. We’ll reply within one business day.</p>
+    <p class="estimate__sub">No cost, no pressure.</p>
   </div>
 
   <div class="estimate__grid">
@@ -127,9 +127,9 @@ const uid = id;
 
 <script>
   const messages = {
-    success: '<strong>Thanks, we got it.</strong> We’ll be in touch within one business day. If water is coming in right now, please call us.',
+    success: '<strong>Thanks, we got it.</strong> We’ll be in touch soon. If water is coming in right now, please call us.',
     error: '<strong>That didn’t send.</strong> Please check your connection and try again, or give us a call.',
-    offline: '<strong>Online requests aren’t connected yet.</strong> Please call us for now. (Site owner: set <code>formAction</code> in src/data/site.ts.)',
+    offline: '<strong>Online requests aren’t connected yet.</strong> Please call us for now.',
   };
 
   for (const form of document.querySelectorAll<HTMLFormElement>('[data-estimate-form]')) {

@@ -57,8 +57,8 @@ export const services: Service[] = [
     slug: 'replacement',
     icon: 'house',
     title: 'Roof replacement',
-    lede: 'A full tear-off and new roof installed by a manufacturer-certified crew, backed by manufacturer and workmanship warranties, with financing if you want to spread the cost.',
-    points: ['Full tear-off and deck inspection', 'Certified installation', 'Manufacturer and workmanship warranties'],
+    lede: 'A full tear-off and new roof installed by a manufacturer-certified crew, backed by the manufacturer’s warranty, with financing if you want to spread the cost.',
+    points: ['Full tear-off and deck inspection', 'Certified installation', 'Manufacturer warranty in writing'],
     photoLabel: 'Finished replacement',
   },
   {
@@ -103,6 +103,6 @@ export const certifications: string[] = [];
 export const steps = [
   { title: 'Free inspection', text: 'We come out, get on the roof, and photograph everything we see.' },
   { title: 'Clear written estimate', text: 'Itemized pricing, repair-or-replace advice, and financing options if you want them.' },
-  { title: 'Certified install', text: 'Our own crew does the work, keeps the site clean, and walks it with you at the end.' },
-  { title: 'Warranty in writing', text: 'You get the manufacturer and workmanship warranty paperwork for your records.' },
+  { title: 'Certified install', text: 'Installed to the manufacturer’s spec, with the site cleaned up and a walk-through with you at the end.' },
+  { title: 'Warranty in writing', text: 'You get the manufacturer warranty paperwork for your records.' },
 ];

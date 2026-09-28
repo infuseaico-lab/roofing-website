@@ -14,7 +14,7 @@ import { services } from '../data/site';
   <PageHero
     crumb="Services"
     title="Roofing services, start to finish."
-    lede="Everything your home’s roof needs, handled by our own family-run crew, with a free written estimate before any work begins."
+    lede="Everything your home’s roof needs, handled by our family-run company, with a free written estimate before any work begins."
   >
     <ul class="jump" aria-label="Jump to a service">
       {services.map((s) => <li><a href={`#${s.slug}`}>{s.title}</a></li>)}
@@ -102,7 +102,7 @@ import { services } from '../data/site';
   .svc h2 :global(svg) {
     width: 2rem;
     height: 2rem;
-    color: var(--amber-deep);
+    color: var(--slate-2);
     flex: none;
   }
 

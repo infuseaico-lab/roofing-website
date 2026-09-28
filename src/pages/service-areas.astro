@@ -36,8 +36,8 @@ import { areas, business, telHref } from '../data/site';
     </div>
     <div class="wrap ask">
       <p>
-        Not sure if you’re in our area?
-        <a href={telHref}>Call <Fill value={business.phone} label="(000) 000-0000" /></a> or
+        Not sure if you’re in our area?{' '}
+        <a href={telHref}>Call <Fill value={business.phone} label="(000) 000-0000" /></a> or{' '}
         <a href="/contact/">send us your ZIP code</a>.
       </p>
     </div>
@@ -65,7 +65,7 @@ import { areas, business, telHref } from '../data/site';
   .county h2 :global(svg) {
     width: 1.75rem;
     height: 1.75rem;
-    color: var(--amber-deep);
+    color: var(--slate-2);
   }
 
   .county ul {

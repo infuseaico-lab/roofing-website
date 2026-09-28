@@ -7,30 +7,8 @@ import TrustRow from '../components/TrustRow.astro';
 import EstimateForm from '../components/EstimateForm.astro';
 import Reviews from '../components/Reviews.astro';
 import CtaBand from '../components/CtaBand.astro';
-import { business, services, steps, areas, telHref, bookHref } from '../data/site';
+import { business, services, steps, areas, certifications, telHref, bookHref } from '../data/site';
 
-const reasons = [
-  {
-    icon: 'users',
-    title: 'Family-owned and local',
-    text: 'You deal with the family that owns the company, not a call center. Our name is on every roof we put on in LA and Orange County.',
-  },
-  {
-    icon: 'award',
-    title: 'Certified installs, warranties in writing',
-    text: 'Our crews install to the manufacturer’s spec, so your roof qualifies for the manufacturer warranty, plus our own workmanship warranty.',
-  },
-  {
-    icon: 'clock',
-    title: 'We show up fast',
-    text: 'Leaks don’t wait for a convenient week. We respond quickly to active leaks and storm damage and protect the house first.',
-  },
-  {
-    icon: 'wallet',
-    title: 'Free estimates and financing',
-    text: 'The estimate costs nothing, and financing lets you fix the roof now and pay over time.',
-  },
-];
 ---
 
 <Base
@@ -38,6 +16,8 @@ const reasons = [
   description="Family-owned residential roofing for Los Angeles and Orange County. Roof repair, replacement, and emergency leak response. Certified installs, written warranties, free estimates, and financing."
 >
   <section class="hero" aria-labelledby="hero-title">
+    <Photo bg class="hero__bg" label="Hero photo: a finished roof on a local home" eager />
+    <div class="hero__scrim" aria-hidden="true"></div>
     <div class="wrap hero__grid">
       <div class="hero__copy">
         <h1 id="hero-title">Family-owned roofing for Los Angeles &amp; Orange County homes.</h1>
@@ -61,11 +41,6 @@ const reasons = [
       </div>
     </div>
 
-    <div class="wrap hero__photos" aria-label="Recent projects">
-      <Photo label="Finished roof replacement" ratio="4 / 3" eager />
-      <Photo label="Crew at work" ratio="4 / 3" />
-      <Photo label="Before and after" ratio="4 / 3" />
-    </div>
   </section>
 
   <section class="section services" aria-labelledby="services-title">
@@ -73,7 +48,7 @@ const reasons = [
       <div class="section-head">
         <h2 id="services-title">Roofing services for your home</h2>
         <p class="lede">
-          From a single slipped tile to a full tear-off, we handle residential roofs start to finish with our own crew.
+          From a single slipped tile to a full tear-off, we handle residential roofs start to finish.
         </p>
       </div>
       <div class="services__grid">
@@ -104,22 +79,51 @@ const reasons = [
       <div class="why__copy">
         <h2 id="why-title">A family name on every roof we build.</h2>
         <p class="lede">
-          Homeowners pick us because they want a roofer who answers the phone, shows up when they say, and stands
-          behind the work for years.
+          Don’t take our word for it. Here’s what you can check before you ever let us on your roof.
         </p>
-        <dl class="reasons">
-          {
-            reasons.map((r) => (
-              <div class="reason">
-                <dt>
-                  <Icon name={r.icon} />
-                  {r.title}
-                </dt>
-                <dd>{r.text}</dd>
-              </div>
-            ))
-          }
+        <dl class="proof">
+          <div>
+            <dt>California license</dt>
+            <dd>
+              <Fill value={business.license ? `#${business.license}` : ''} label="#000000" />
+              <a href="https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx" rel="noopener" target="_blank">
+                Verify with the CSLB
+              </a>
+            </dd>
+          </div>
+          <div>
+            <dt>Insurance</dt>
+            <dd><span class="ph">Liability and workers’ comp carrier</span></dd>
+          </div>
+          <div>
+            <dt>Manufacturer certification</dt>
+            <dd>
+              {certifications.length ? certifications.join(', ') : <span class="ph">Certification name</span>}
+            </dd>
+          </div>
+          <div>
+            <dt>Warranty</dt>
+            <dd>Manufacturer warranty, in writing, on every certified install</dd>
+          </div>
+          <div>
+            <dt>Reviews</dt>
+            <dd>
+              <span class="ph">Rating and review count</span>
+              {business.googleReviewsUrl && <a href={business.googleReviewsUrl} rel="noopener" target="_blank">Read them</a>}
+            </dd>
+          </div>
+          <div>
+            <dt>In business</dt>
+            <dd>
+              {business.foundedYear ? `Family-owned since ${business.foundedYear}` : <Fragment>Family-owned since <Fill label="year" /></Fragment>}
+            </dd>
+          </div>
         </dl>
+        <ul class="proof__badges" aria-label="Certification and association badges">
+          {['Manufacturer badge', 'Manufacturer badge', 'BBB or trade association'].map((l) => (
+            <li><Icon name="award" /><span class="ph">{l}</span></li>
+          ))}
+        </ul>
       </div>
     </div>
   </section>
@@ -210,10 +214,34 @@ const reasons = [
 
 <style>
   .hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     background: var(--slate);
     color: var(--on-slate);
-    padding-top: clamp(3rem, 7vw, 5.5rem);
-    margin-bottom: clamp(6rem, 12vw, 9rem);
+    padding-block: clamp(3.5rem, 8vw, 6.5rem);
+    min-height: min(52rem, calc(100svh - 4.75rem));
+    display: grid;
+    align-items: center;
+  }
+
+  .hero :global(.hero__bg) {
+    z-index: -2;
+    animation: settle 1400ms var(--ease-out) both;
+  }
+
+  /* Keeps the headline legible over any photo: solid slate under the copy, opening toward the form. */
+  .hero__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(90deg, rgb(19 40 58 / 0.94) 0%, rgb(19 40 58 / 0.86) 45%, rgb(19 40 58 / 0.35) 100%);
+  }
+
+  @keyframes settle {
+    from {
+      transform: scale(1.05);
+    }
   }
 
   .hero__grid {
@@ -260,36 +288,6 @@ const reasons = [
 
   .hero__book :global(svg:first-child) {
     color: var(--amber);
-  }
-
-  .hero__photos {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr;
-    gap: clamp(0.75rem, 1.5vw, 1.25rem);
-    margin-top: clamp(3rem, 6vw, 4.5rem);
-    margin-bottom: calc(-1 * clamp(6rem, 12vw, 9rem));
-    position: relative;
-  }
-
-  .hero__photos :global(.photo) {
-    aspect-ratio: auto;
-    height: clamp(13rem, 22vw, 20rem);
-    box-shadow: var(--shadow);
-    animation: rise 900ms var(--ease-out) both;
-  }
-
-  .hero__photos :global(.photo:nth-child(2)) {
-    animation-delay: 90ms;
-  }
-
-  .hero__photos :global(.photo:nth-child(3)) {
-    animation-delay: 180ms;
-  }
-
-  @keyframes rise {
-    from {
-      transform: translateY(28px);
-    }
   }
 
   /* Services */
@@ -343,36 +341,57 @@ const reasons = [
     gap: 1.5rem;
   }
 
-  .reasons {
-    margin: 1rem 0 0;
+  .proof {
+    margin: 0.5rem 0 0;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 2rem 2.5rem;
+    border-top: 1px solid var(--line);
   }
 
-  .reason dt {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    font-family: var(--font-display);
-    font-stretch: 90%;
-    font-weight: 720;
-    font-size: 1.2rem;
-    line-height: 1.2;
-    margin-bottom: 0.5rem;
+  .proof > div {
+    display: grid;
+    grid-template-columns: minmax(9rem, 14rem) 1fr;
+    gap: 0.5rem 1.5rem;
+    padding-block: 0.95rem;
+    border-bottom: 1px solid var(--line);
   }
 
-  .reason dt :global(svg) {
-    width: 1.35rem;
-    height: 1.35rem;
-    color: var(--amber-deep);
-    flex: none;
+  .proof dt {
+    font-weight: 700;
   }
 
-  .reason dd {
+  .proof dd {
     margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
     color: var(--ink-2);
-    font-size: 1.05rem;
+  }
+
+  .proof__badges {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .proof__badges li {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    padding: 1.1rem 0.75rem;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    background: var(--paper);
+    text-align: center;
+    font-size: 0.9rem;
+  }
+
+  .proof__badges :global(svg) {
+    width: 1.6rem;
+    height: 1.6rem;
+    color: var(--slate-2);
   }
 
   /* Process */
@@ -466,7 +485,7 @@ const reasons = [
   .area__lists h3 :global(svg) {
     width: 1.2rem;
     height: 1.2rem;
-    color: var(--amber-deep);
+    color: var(--slate-2);
   }
 
   .area__lists ul {
@@ -484,6 +503,18 @@ const reasons = [
   }
 
   @media (max-width: 1020px) {
+    .hero__scrim {
+      background: linear-gradient(180deg, rgb(19 40 58 / 0.55) 0%, rgb(19 40 58 / 0.92) 38%, rgb(19 40 58 / 0.96) 100%);
+    }
+
+    .hero {
+      padding-top: clamp(9rem, 32vw, 14rem);
+    }
+
+    .hero :global(.photo__slot) {
+      place-content: start end;
+    }
+
     .hero__grid {
       grid-template-columns: 1fr;
     }
@@ -514,15 +545,15 @@ const reasons = [
   }
 
   @media (max-width: 600px) {
-    .hero__photos {
+    .proof > div {
       grid-template-columns: 1fr;
+      gap: 0.2rem;
     }
 
-    .hero__photos :global(.photo:not(:first-child)) {
-      display: none;
+    .proof__badges {
+      grid-template-columns: 1fr 1fr;
     }
 
-    .reasons,
     .steps {
       grid-template-columns: 1fr;
     }

@@ -327,7 +327,7 @@ html {
 }
 
 .section--slate .checks svg {
-  color: var(--amber);
+  color: var(--on-slate-2);
 }
 
 /* Page header band for inner pages */

@@ -47,9 +47,10 @@ import { business, telHref } from '../data/site';
                   </a>
                 </Fragment>
               ) : (
+                // Owner: set bookingUrl in src/data/site.ts and a "Choose a time" button replaces this.
                 <p>
-                  <span class="ph">Booking link</span> Add your scheduling link (Calendly, Jobber, Housecall Pro...) as{' '}
-                  <code>bookingUrl</code> in src/data/site.ts and a “Choose a time” button appears here.
+                  <span class="ph">Online booking link</span> Online booking is coming soon. For now, call us or send the
+                  estimate form and we’ll set up a time.
                 </p>
               )
             }
@@ -101,8 +102,8 @@ import { business, telHref } from '../data/site';
     height: 3rem;
     padding: 0.7rem;
     border-radius: 50%;
-    background: var(--slate);
-    color: var(--amber);
+    background: var(--slate-tint);
+    color: var(--slate);
   }
 
   .way > div {

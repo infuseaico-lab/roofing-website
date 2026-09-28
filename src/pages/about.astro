@@ -7,13 +7,13 @@ import Photo from '../components/Photo.astro';
 import TrustRow from '../components/TrustRow.astro';
 import Reviews from '../components/Reviews.astro';
 import CtaBand from '../components/CtaBand.astro';
-import { business, certifications, displayName } from '../data/site';
+import { business, certifications } from '../data/site';
 
 const commitments = [
   { title: 'We answer the phone', text: 'You reach a person who can actually help, and usually someone from the family.' },
   { title: 'We say what we found', text: 'Photos from your roof, plain explanations, and an itemized written estimate.' },
-  { title: 'We use our own crew', text: 'The people on your roof work for us and are trained to the manufacturer’s installation spec.' },
-  { title: 'We stand behind it', text: 'Manufacturer and workmanship warranties, in writing, for your records.' },
+  { title: 'We install to spec', text: 'Every roof goes on to the manufacturer’s installation spec, so the warranty holds.' },
+  { title: 'We stand behind it', text: 'The manufacturer warranty, in writing, for your records.' },
 ];
 ---
 
@@ -23,7 +23,7 @@ const commitments = [
 >
   <PageHero crumb="About us" title="A local family business, built one roof at a time.">
     <p class="lede">
-      {displayName} is family-owned and has served homeowners in Los Angeles and Orange County
+      <Fill value={business.name} label="Company name" /> is family-owned and has served homeowners in Los Angeles and Orange County
       {business.foundedYear ? ` since ${business.foundedYear}` : <Fragment> since <Fill label="year founded" /></Fragment>}.
     </p>
   </PageHero>
@@ -40,8 +40,7 @@ const commitments = [
         </p>
         <p>
           We do residential roofing only: repairs, replacements, emergency leak response, and inspections. Our crews
-          install to the manufacturer’s specifications, so your new roof carries the manufacturer’s warranty along with
-          our own workmanship warranty.
+          install to the manufacturer’s specifications, so your new roof carries the manufacturer’s warranty.
         </p>
         <TrustRow />
       </div>
@@ -113,9 +112,16 @@ const commitments = [
 
   .commit {
     margin: 0;
+    max-width: 56rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .commit > div {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 2.25rem 3rem;
+    grid-template-columns: minmax(12rem, 20rem) 1fr;
+    gap: 0.35rem 2rem;
+    padding-block: 1.4rem;
+    border-bottom: 1px solid var(--line);
   }
 
   .commit dt {
@@ -125,8 +131,7 @@ const commitments = [
     font-family: var(--font-display);
     font-stretch: 90%;
     font-weight: 720;
-    font-size: 1.35rem;
-    margin-bottom: 0.4rem;
+    font-size: 1.3rem;
   }
 
   .commit dt :global(svg) {
@@ -176,7 +181,7 @@ const commitments = [
 
   @media (max-width: 860px) {
     .story,
-    .commit {
+    .commit > div {
       grid-template-columns: 1fr;
     }
   }
