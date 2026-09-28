@@ -1,0 +1,568 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-28T23:21:47.368Z",
+  "title": "Design System: Family Roofing, Los Angeles & Orange County",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Sunlit Paper",
+        "canonical": "oklch(97.0% 0.005 95.1)",
+        "tonalRamp": [
+          "#0c0b09",
+          "#252421",
+          "#40403d",
+          "#5e5e5a",
+          "#81807d",
+          "#a5a5a1",
+          "#cbcac7",
+          "#efeeed"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "White",
+        "canonical": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Slate Ink",
+        "canonical": "oklch(24.4% 0.025 239.3)",
+        "tonalRamp": [
+          "#030c15",
+          "#19262f",
+          "#34424c",
+          "#51606a",
+          "#73838e",
+          "#97a7b3",
+          "#bccdd9",
+          "#e9f0f5"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "oklch(43.3% 0.025 237.4)",
+        "tonalRamp": [
+          "#020d14",
+          "#18262f",
+          "#33424c",
+          "#51606a",
+          "#73838e",
+          "#97a7b3",
+          "#bccdd9",
+          "#e9f0f4"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(88.5% 0.013 91.5)",
+        "tonalRamp": [
+          "#0d0b06",
+          "#26241d",
+          "#424038",
+          "#605d56",
+          "#838078",
+          "#a7a49c",
+          "#cdcac1",
+          "#f0eeeb"
+        ]
+      },
+      "slate": {
+        "role": "primary",
+        "displayName": "Roof Slate",
+        "canonical": "oklch(33.6% 0.047 240.8)",
+        "tonalRamp": [
+          "#000d1d",
+          "#0b2739",
+          "#284356",
+          "#456176",
+          "#67849a",
+          "#8ba9c0",
+          "#b0cfe7",
+          "#e4f0fa"
+        ]
+      },
+      "slate-deep": {
+        "role": "primary",
+        "displayName": "Night Slate",
+        "canonical": "oklch(26.9% 0.043 246.2)",
+        "tonalRamp": [
+          "#000c1c",
+          "#112638",
+          "#2c4255",
+          "#4a6075",
+          "#6b8399",
+          "#8fa8bf",
+          "#b4cee6",
+          "#e5f0fa"
+        ]
+      },
+      "slate-2": {
+        "role": "primary",
+        "displayName": "Weathered Slate",
+        "canonical": "oklch(41.6% 0.057 240.1)",
+        "tonalRamp": [
+          "#000c20",
+          "#02273d",
+          "#21445b",
+          "#3f627b",
+          "#61859f",
+          "#84aac5",
+          "#a9d0ed",
+          "#e1f1fd"
+        ]
+      },
+      "slate-tint": {
+        "role": "primary",
+        "displayName": "Slate Wash",
+        "canonical": "oklch(94.2% 0.008 228.9)",
+        "tonalRamp": [
+          "#080c0e",
+          "#202527",
+          "#3c4143",
+          "#595e61",
+          "#7c8184",
+          "#a0a6a8",
+          "#c6ccce",
+          "#eceff0"
+        ]
+      },
+      "on-slate": {
+        "role": "neutral",
+        "displayName": "On-Slate",
+        "canonical": "oklch(97.1% 0.003 219.5)",
+        "tonalRamp": [
+          "#0a0b0c",
+          "#222425",
+          "#3e4041",
+          "#5b5e5f",
+          "#7e8182",
+          "#a2a5a6",
+          "#c8cbcc",
+          "#edefef"
+        ]
+      },
+      "on-slate-2": {
+        "role": "neutral",
+        "displayName": "On-Slate Muted",
+        "canonical": "oklch(85.2% 0.019 232.6)",
+        "tonalRamp": [
+          "#040d12",
+          "#1b262c",
+          "#364248",
+          "#536067",
+          "#76828a",
+          "#99a7af",
+          "#bfcdd5",
+          "#eaeff3"
+        ]
+      },
+      "amber": {
+        "role": "secondary",
+        "displayName": "Porch-Light Amber",
+        "canonical": "oklch(81.0% 0.144 79.3)",
+        "tonalRamp": [
+          "#260000",
+          "#461000",
+          "#663000",
+          "#875000",
+          "#ad7300",
+          "#d4981a",
+          "#fcbf4f",
+          "#ffebc4"
+        ]
+      },
+      "amber-deep": {
+        "role": "secondary",
+        "displayName": "Deep Amber",
+        "canonical": "oklch(73.3% 0.146 76.3)",
+        "tonalRamp": [
+          "#280000",
+          "#480c00",
+          "#692d00",
+          "#8a4d00",
+          "#b17100",
+          "#d89617",
+          "#ffbc4e",
+          "#ffeac3"
+        ]
+      },
+      "error": {
+        "role": "status",
+        "displayName": "Error Red",
+        "canonical": "oklch(50.1% 0.178 28.7)",
+        "tonalRamp": [
+          "#3a0000",
+          "#600000",
+          "#860000",
+          "#ac1d17",
+          "#d64a3d",
+          "#ff7161",
+          "#ff9886",
+          "#ffddd4"
+        ]
+      },
+      "ok": {
+        "role": "status",
+        "displayName": "Check Green",
+        "canonical": "oklch(47.1% 0.097 157.6)",
+        "tonalRamp": [
+          "#001500",
+          "#00310f",
+          "#004e2a",
+          "#216e48",
+          "#489269",
+          "#6db78d",
+          "#93deb2",
+          "#daf7e5"
+        ]
+      },
+      "field-stroke": {
+        "role": "neutral",
+        "displayName": "Field Stroke",
+        "canonical": "oklch(80.1% 0.008 228.9)",
+        "tonalRamp": [
+          "#080c0e",
+          "#202527",
+          "#3c4143",
+          "#595f61",
+          "#7c8184",
+          "#a0a6a9",
+          "#c5cccf",
+          "#eceff0"
+        ]
+      },
+      "placeholder-text": {
+        "role": "neutral",
+        "displayName": "Placeholder Text",
+        "canonical": "oklch(56.2% 0.020 240.2)",
+        "tonalRamp": [
+          "#040c13",
+          "#1b252d",
+          "#364149",
+          "#545f68",
+          "#76828b",
+          "#9aa7b0",
+          "#bfcdd7",
+          "#eaeff3"
+        ]
+      },
+      "ph-fill": {
+        "role": "placeholder",
+        "displayName": "Placeholder Cream",
+        "canonical": "oklch(96.4% 0.049 91.8)",
+        "tonalRamp": [
+          "#130a00",
+          "#2d2304",
+          "#493f20",
+          "#675d3e",
+          "#8b805f",
+          "#afa482",
+          "#d6caa7",
+          "#f3eee0"
+        ]
+      },
+      "ph-ink": {
+        "role": "placeholder",
+        "displayName": "Placeholder Umber",
+        "canonical": "oklch(43.4% 0.090 79.3)",
+        "tonalRamp": [
+          "#1d0200",
+          "#3a1c00",
+          "#593800",
+          "#785715",
+          "#9d7a3d",
+          "#c39e61",
+          "#eac486",
+          "#fcecd4"
+        ]
+      },
+      "ph-stroke": {
+        "role": "placeholder",
+        "displayName": "Placeholder Brass",
+        "canonical": "oklch(69.9% 0.137 81.5)",
+        "tonalRamp": [
+          "#240000",
+          "#431400",
+          "#633300",
+          "#845200",
+          "#a97500",
+          "#d09a27",
+          "#f8c156",
+          "#ffecc5"
+        ]
+      },
+      "ph-ink-on-slate": {
+        "role": "placeholder",
+        "displayName": "Placeholder Cream on Slate",
+        "canonical": "oklch(92.3% 0.083 85.0)",
+        "tonalRamp": [
+          "#1a0500",
+          "#361f00",
+          "#543b00",
+          "#73591e",
+          "#977c43",
+          "#bca167",
+          "#e3c78c",
+          "#f9edd6"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "H1 only: hero and page-hero titles."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section H2s."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "H3, card, step, and service titles."
+      },
+      "lede": {
+        "displayName": "Lede",
+        "purpose": "The single supporting paragraph under a section heading, max 60ch."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Reading text; prose max 68ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Form labels and trust-row items."
+      },
+      "button": {
+        "displayName": "Button",
+        "purpose": "All buttons."
+      },
+      "number": {
+        "displayName": "Number",
+        "purpose": "Phone numbers and step numerals, tabular figures."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-lift",
+        "value": "0 1px 2px rgb(0 0 0 / 0.08), 0 14px 32px -10px rgb(0 0 0 / 0.28)",
+        "purpose": "Estimate form card only."
+      },
+      {
+        "name": "amber-glow",
+        "value": "0 1px 0 rgb(0 0 0 / 0.08), 0 6px 16px -6px rgb(220 154 31 / 0.6)",
+        "purpose": "Primary buttons."
+      },
+      {
+        "name": "header-scrolled",
+        "value": "0 8px 24px -16px rgb(0 0 0 / 0.3)",
+        "purpose": "Sticky header after scroll."
+      },
+      {
+        "name": "mobile-bar",
+        "value": "0 -8px 24px -16px rgb(0 0 0 / 0.35)",
+        "purpose": "Fixed bottom call/estimate bar."
+      },
+      {
+        "name": "nav-drawer",
+        "value": "0 24px 32px -24px rgb(0 0 0 / 0.35)",
+        "purpose": "Open mobile nav drawer."
+      },
+      {
+        "name": "focus-ring",
+        "value": "outline: 3px solid #f2b544; outline-offset: 3px",
+        "purpose": "Global focus-visible; fields use 0 0 0 3px rgb(242 181 68 / 0.55) with a slate border instead."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "All state transitions."
+      },
+      {
+        "name": "duration-control",
+        "value": "180ms",
+        "purpose": "Buttons, arrow links, CTA routes; inputs use 150ms, header shadow 200ms."
+      },
+      {
+        "name": "hero-settle",
+        "value": "scale(1.05) to 1 over 1400ms ease-out",
+        "purpose": "Hero background photo on load."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation and transition durations 0.01ms; smooth scroll off",
+        "purpose": "prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "header-compact",
+        "value": "1180px"
+      },
+      {
+        "name": "nav-drawer",
+        "value": "1020px"
+      },
+      {
+        "name": "single-column",
+        "value": "900px"
+      },
+      {
+        "name": "mobile-bar",
+        "value": "760px"
+      },
+      {
+        "name": "header-minimal",
+        "value": "520px"
+      },
+      {
+        "name": "form-single",
+        "value": "480px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Amber estimate action; the one warm call-to-action on every page.",
+      "html": "<a class=\"ds-btn ds-btn-primary\" href=\"#\">Free estimate</a>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:0.55rem;min-height:3.25rem;padding:0.75rem 1.4rem;border:2px solid transparent;border-radius:var(--radius, 6px);font-family:var(--font-display, 'Archivo Variable', 'Archivo', system-ui, sans-serif);font-stretch:92%;font-weight:700;font-size:1.05rem;line-height:1.1;text-decoration:none;cursor:pointer;transition:background-color 180ms cubic-bezier(0.16,1,0.3,1), transform 180ms cubic-bezier(0.16,1,0.3,1);} .ds-btn svg{width:1.2em;height:1.2em} .ds-btn-primary{background:var(--amber, #f2b544);color:var(--ink, #15222b);box-shadow:0 1px 0 rgb(0 0 0 / 0.08), 0 6px 16px -6px rgb(220 154 31 / 0.6)} .ds-btn-primary:hover{background:var(--amber-deep, #dc9a1f)} .ds-btn:active{transform:translateY(1px)} .ds-btn:focus-visible{outline:3px solid var(--amber, #f2b544);outline-offset:3px;}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Outlined secondary route, used for Call and \"how it works\" links.",
+      "html": "<a class=\"ds-btn ds-btn-ghost\" href=\"#\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z\"/></svg> Call (000) 000-0000</a>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:0.55rem;min-height:3.25rem;padding:0.75rem 1.4rem;border:2px solid transparent;border-radius:var(--radius, 6px);font-family:var(--font-display, 'Archivo Variable', 'Archivo', system-ui, sans-serif);font-stretch:92%;font-weight:700;font-size:1.05rem;line-height:1.1;text-decoration:none;cursor:pointer;transition:background-color 180ms cubic-bezier(0.16,1,0.3,1), transform 180ms cubic-bezier(0.16,1,0.3,1);} .ds-btn svg{width:1.2em;height:1.2em;flex:none} .ds-btn-ghost{background:transparent;color:var(--slate, #1f3a4d);border-color:currentColor} .ds-btn-ghost:hover{background:var(--slate-tint, #e7edf0)} .ds-btn:active{transform:translateY(1px)} .ds-btn:focus-visible{outline:3px solid var(--amber, #f2b544);outline-offset:3px;}"
+    },
+    {
+      "name": "Slate Button",
+      "kind": "button",
+      "refersTo": "button-slate",
+      "description": "Default solid button for non-estimate actions.",
+      "html": "<button class=\"ds-btn ds-btn-slate\" type=\"button\">Send</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:0.55rem;min-height:3.25rem;padding:0.75rem 1.4rem;border:2px solid transparent;border-radius:var(--radius, 6px);font-family:var(--font-display, 'Archivo Variable', 'Archivo', system-ui, sans-serif);font-stretch:92%;font-weight:700;font-size:1.05rem;line-height:1.1;text-decoration:none;cursor:pointer;transition:background-color 180ms cubic-bezier(0.16,1,0.3,1), transform 180ms cubic-bezier(0.16,1,0.3,1);} .ds-btn-slate{background:var(--slate, #1f3a4d);color:#fff} .ds-btn-slate:hover{background:var(--slate-deep, #13283a)} .ds-btn:active{transform:translateY(1px)} .ds-btn:focus-visible{outline:3px solid var(--amber, #f2b544);outline-offset:3px;}"
+    },
+    {
+      "name": "Arrow Link",
+      "kind": "custom",
+      "refersTo": "link-arrow",
+      "description": "Text route with a trailing arrow that slides on hover.",
+      "html": "<a class=\"ds-link-arrow\" href=\"#\">See all service areas <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></a>",
+      "css": ".ds-link-arrow{display:inline-flex;align-items:center;gap:0.4rem;font-family:var(--font-body, 'Source Sans 3', system-ui, sans-serif);font-size:1.125rem;font-weight:650;color:var(--slate, #1f3a4d);text-decoration-thickness:1px;text-underline-offset:0.2em} .ds-link-arrow svg{width:1.1em;height:1.1em;transition:transform 180ms cubic-bezier(0.16,1,0.3,1)} .ds-link-arrow:hover{color:var(--slate-2, #2d5068);text-decoration-thickness:2px} .ds-link-arrow:hover svg{transform:translateX(3px)} .ds-link-arrow:focus-visible{outline:3px solid var(--amber, #f2b544);outline-offset:3px;border-radius:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Labeled estimate-form field with slate border on focus and amber ring.",
+      "html": "<div class=\"ds-field\"><label for=\"ds-zip\">ZIP code</label><input id=\"ds-zip\" class=\"ds-input\" type=\"text\" inputmode=\"numeric\" placeholder=\"90210\"></div>",
+      "css": ".ds-field{display:grid;gap:0.35rem;font-family:var(--font-body, 'Source Sans 3', system-ui, sans-serif);color:var(--ink, #15222b)} .ds-field label{font-weight:650;font-size:0.98rem} .ds-input{width:100%;min-height:3.1rem;padding:0.65rem 0.85rem;font:inherit;font-size:1.05rem;color:var(--ink, #15222b);background:#fff;border:1.5px solid #b9bfc2;border-radius:var(--radius, 6px);transition:border-color 150ms cubic-bezier(0.16,1,0.3,1), box-shadow 150ms cubic-bezier(0.16,1,0.3,1)} .ds-input::placeholder{color:#6b7780} .ds-input:hover{border-color:var(--slate-2, #2d5068)} .ds-input:focus-visible{outline:none;border-color:var(--slate, #1f3a4d);box-shadow:0 0 0 3px rgb(242 181 68 / 0.55)} .ds-input[aria-invalid=\"true\"]{border-color:var(--error, #b3261e);background:#fff8f7}"
+    },
+    {
+      "name": "Placeholder Chip",
+      "kind": "chip",
+      "refersTo": "placeholder-chip",
+      "description": "Rendered by Fill for any business fact the owner has not supplied yet; never replaced with invented copy.",
+      "html": "<p class=\"ds-ph-demo\">CA License <span class=\"ds-ph\" title=\"Add this in src/data/site.ts\">#000000</span></p><p class=\"ds-ph-demo ds-on-slate\">Active leak? Call now. <span class=\"ds-ph\">Emergency hours</span></p>",
+      "css": ".ds-ph-demo{margin:0;padding:0.75rem 1rem;font-family:var(--font-body, 'Source Sans 3', system-ui, sans-serif);font-size:1.125rem;color:var(--ink, #15222b)} .ds-ph{background:#fff3cf;color:#6b4a00;border:1px dashed #c9941c;border-radius:4px;padding:0 0.35em;font-weight:600;white-space:nowrap} .ds-on-slate{background:var(--slate, #1f3a4d);color:var(--on-slate-2, #c3d1d9)} .ds-on-slate .ds-ph{background:rgb(242 181 68 / 0.16);color:#ffe2a6;border-color:rgb(242 181 68 / 0.7)}"
+    },
+    {
+      "name": "Photo Slot",
+      "kind": "custom",
+      "refersTo": "photo-slot",
+      "description": "Square-cornered photo frame; until a real project photo is supplied it shows a labeled slate slot.",
+      "html": "<figure class=\"ds-photo\"><div class=\"ds-photo__slot\" role=\"img\" aria-label=\"Photo placeholder: Finished replacement\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z\"/><circle cx=\"12\" cy=\"13\" r=\"3\"/></svg><span class=\"ds-photo__label\">Finished replacement</span><span class=\"ds-photo__hint\">Your project photo goes here</span></div></figure>",
+      "css": ".ds-photo{margin:0;aspect-ratio:16 / 10;overflow:hidden;background:var(--slate-2, #2d5068);max-width:28rem} .ds-photo__slot{height:100%;display:grid;place-content:center;justify-items:center;gap:0.35rem;padding:1.5rem;text-align:center;color:var(--on-slate, #f3f6f7);background:var(--slate-2, #2d5068);outline:1px dashed rgb(255 255 255 / 0.35);outline-offset:-10px;font-family:var(--font-body, 'Source Sans 3', system-ui, sans-serif)} .ds-photo__slot svg{width:2rem;height:2rem;color:var(--on-slate-2, #c3d1d9)} .ds-photo__label{font-family:var(--font-display, 'Archivo Variable', 'Archivo', system-ui, sans-serif);font-stretch:90%;font-weight:700;font-size:1.1rem} .ds-photo__hint{font-size:0.9rem;color:var(--on-slate-2, #c3d1d9)}"
+    },
+    {
+      "name": "Estimate Card",
+      "kind": "card",
+      "refersTo": "estimate-card",
+      "description": "The white, lifted estimate form that sits on slate as the primary action.",
+      "html": "<div class=\"ds-slate\"><form class=\"ds-estimate\" onsubmit=\"return false\"><div><h2 class=\"ds-estimate__title\">Get your free estimate</h2><p class=\"ds-estimate__sub\">No cost, no pressure.</p></div><div class=\"ds-estimate__grid\"><label class=\"ds-f\">Your name<input type=\"text\"></label><label class=\"ds-f\">Phone<input type=\"tel\"></label></div><button class=\"ds-submit\" type=\"submit\">Request my free estimate <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button><p class=\"ds-estimate__alt\">Rather talk? <a href=\"#\">Call <span class=\"ds-ph\">(000) 000-0000</span></a></p></form></div>",
+      "css": ".ds-slate{background:var(--slate, #1f3a4d);padding:2rem} .ds-estimate{max-width:30rem;background:#fff;color:var(--ink, #15222b);border-radius:var(--radius, 6px);padding:clamp(1.5rem, 3vw, 2.25rem);box-shadow:0 1px 2px rgb(0 0 0 / 0.08), 0 14px 32px -10px rgb(0 0 0 / 0.28);display:grid;gap:1.25rem;font-family:var(--font-body, 'Source Sans 3', system-ui, sans-serif)} .ds-estimate__title{margin:0;font-family:var(--font-display, 'Archivo Variable', 'Archivo', system-ui, sans-serif);font-stretch:88%;font-weight:760;letter-spacing:-0.02em;line-height:1.06;font-size:clamp(1.5rem, 2.2vw, 1.85rem)} .ds-estimate__sub{margin:0.35rem 0 0;color:var(--ink-2, #44535d)} .ds-estimate__grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem} .ds-f{display:grid;gap:0.35rem;font-weight:650;font-size:0.98rem} .ds-f input{min-height:3.1rem;padding:0.65rem 0.85rem;font:inherit;font-weight:400;font-size:1.05rem;border:1.5px solid #b9bfc2;border-radius:var(--radius, 6px)} .ds-f input:focus-visible{outline:none;border-color:var(--slate, #1f3a4d);box-shadow:0 0 0 3px rgb(242 181 68 / 0.55)} .ds-submit{display:inline-flex;align-items:center;justify-content:center;gap:0.55rem;width:100%;min-height:3.5rem;border:0;border-radius:var(--radius, 6px);background:var(--amber, #f2b544);color:var(--ink, #15222b);font-family:var(--font-display, 'Archivo Variable', 'Archivo', system-ui, sans-serif);font-stretch:92%;font-weight:700;font-size:1.12rem;cursor:pointer;box-shadow:0 1px 0 rgb(0 0 0 / 0.08), 0 6px 16px -6px rgb(220 154 31 / 0.6)} .ds-submit svg{width:1.2em;height:1.2em} .ds-submit:hover{background:var(--amber-deep, #dc9a1f)} .ds-submit:focus-visible{outline:3px solid var(--amber, #f2b544);outline-offset:3px;} .ds-estimate__alt{margin:0;text-align:center;font-size:0.98rem;color:var(--ink-2, #44535d)} .ds-estimate__alt a{font-weight:700;color:var(--slate, #1f3a4d)} .ds-ph{background:#fff3cf;color:#6b4a00;border:1px dashed #c9941c;border-radius:4px;padding:0 0.35em;font-weight:600;white-space:nowrap}"
+    },
+    {
+      "name": "Header Navigation",
+      "kind": "nav",
+      "refersTo": "site-nav",
+      "description": "White sticky header: brand, 600-weight links with amber current-page underline, phone medallion, estimate button.",
+      "html": "<header class=\"ds-header\"><span class=\"ds-brand\">Company name</span><nav class=\"ds-nav\"><a href=\"#\">Services</a><a href=\"#\" aria-current=\"page\">Financing</a><a href=\"#\">About us</a></nav><a class=\"ds-phone\" href=\"#\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z\"/></svg><span>(000) 000-0000</span></a></header>",
+      "css": ".ds-header{display:flex;align-items:center;gap:1.5rem;min-height:4.75rem;padding:0 1.5rem;background:#fff;border-bottom:1px solid var(--line, #dcd9d0);font-family:var(--font-body, 'Source Sans 3', system-ui, sans-serif)} .ds-brand{font-family:var(--font-display, 'Archivo Variable', 'Archivo', system-ui, sans-serif);font-stretch:88%;font-weight:780;font-size:1.2rem;color:var(--ink, #15222b);margin-right:auto} .ds-nav{display:flex;gap:0.25rem} .ds-nav a{padding:0.5rem 0.7rem;color:var(--ink, #15222b);text-decoration:none;font-weight:600;font-size:1.02rem;border-radius:var(--radius, 6px)} .ds-nav a:hover{background:var(--slate-tint, #e7edf0)} .ds-nav a[aria-current=\"page\"]{color:var(--slate, #1f3a4d);box-shadow:inset 0 -2px 0 var(--amber, #f2b544);border-radius:0} .ds-nav a:focus-visible,.ds-phone:focus-visible{outline:3px solid var(--amber, #f2b544);outline-offset:3px;} .ds-phone{display:flex;align-items:center;gap:0.6rem;color:var(--ink, #15222b);text-decoration:none;font-family:var(--font-display, 'Archivo Variable', 'Archivo', system-ui, sans-serif);font-weight:750;font-variant-numeric:tabular-nums} .ds-phone svg{width:2.5rem;height:2.5rem;padding:0.6rem;border-radius:50%;background:var(--slate-tint, #e7edf0);color:var(--slate, #1f3a4d)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Job-Site Clipboard",
+    "overview": "A local family roofer's site, played straight at the craft level of the best in the category. Everything a homeowner needs to act is on the page and nothing is ornamental: a sunlit paper ground, deep slate ink and slate brand fields, and a single warm amber that means \"do this now.\" Trust is carried by checkable facts laid out on hairline-ruled lists, by square photo frames that will hold the crew's real work, and by a white estimate card that sits on every slate field as the primary action.\n\nThe system is honest about what it does not yet have. Every business fact the owner still has to supply renders as a dashed amber placeholder chip, and every missing photo renders as a labeled slate slot with a camera icon. These are first-class parts of the system, not scaffolding to hide: they keep invented proof out of the build and tell the owner exactly what to fill in.\n\nDensity is comfortable and phone-first: 18px body, generous section rhythm, large tap targets (48px-plus controls), and a persistent call/estimate bar on small screens.",
+    "keyCharacteristics": [
+      "Light paper and white surfaces alternating by section; slate fields for the hero, inner-page header band, and closing CTA.",
+      "One amber action voice; slate for everything brand and structural.",
+      "Archivo semi-condensed, heavy, tight-tracked headings over Source Sans 3 reading text.",
+      "Square photo frames, 6px controls, 1px hairline rules instead of card boxes.",
+      "Lucide line icons at one stroke weight (1.9).",
+      "Visible, labeled placeholders for every unsupplied fact and photo."
+    ],
+    "rules": [
+      {
+        "name": "The One Warm Voice Rule",
+        "body": "Amber is the only warm hue and it signals action or attention: primary buttons, focus, current page, the booking link accent. It is never a section or card background. Everything structural is slate.",
+        "section": "colors"
+      },
+      {
+        "name": "The Slate Carries The Brand Rule",
+        "body": "Brand presence comes from full-width slate fields (hero, page header, CTA band, footer), not from colored text or tinted cards on light sections.",
+        "section": "colors"
+      },
+      {
+        "name": "The Sentence-Case Rule",
+        "body": "No uppercase labels, eyebrows, or tracked-out small caps anywhere. Headings are sentence case and stand alone; the H2 plus one lede is the whole section head.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline Over Box Rule",
+        "body": "Lists of facts, steps, reviews, FAQs, and city lists are separated by 1px `line` rules (a top border per item), never boxed into shadowed cards.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Square Photo Rule",
+        "body": "Photo frames are never rounded, never bordered, and fill their frame with `object-fit: cover` at a declared aspect ratio (4/3 default, 16/10 service, 4/5 portrait).",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "**Do** use amber only for primary actions and attention states (focus, current page, selection).",
+      "**Do** route every unsupplied business fact through Fill so it shows as a placeholder chip until the owner provides it.",
+      "**Do** use the Photo component with a descriptive label for every image position; pass `src` only for the owner's real photos.",
+      "**Do** keep controls at least 3rem tall and body text at 1.125rem.",
+      "**Do** separate lists of facts, steps, and reviews with 1px hairline rules.",
+      "**Do** use Lucide icons through the Icon component at stroke 1.9.",
+      "**Do** keep the estimate card white, even on slate."
+    ],
+    "donts": [
+      "**Don't** put stock photography, invented reviews, star ratings, review counts, stats, or certifications in place of a placeholder.",
+      "**Don't** fill a section or card background with amber.",
+      "**Don't** round photo frames or put borders around them.",
+      "**Don't** add uppercase eyebrows, kickers, or tracked-out labels above headings.",
+      "**Don't** use dashed borders for anything that is not a placeholder.",
+      "**Don't** box content into shadowed cards; the only lifted card is the estimate form."
+    ]
+  }
+}
