@@ -1,0 +1,363 @@
+@import '@fontsource-variable/archivo/wdth.css';
+@import '@fontsource-variable/source-sans-3/wght.css';
+
+:root {
+  /* Palette: sunlit ground, slate ink and brand, one amber for primary actions. */
+  --paper: #f6f5f1;
+  --white: #ffffff;
+  --ink: #15222b;
+  --ink-2: #44535d;
+  --line: #dcd9d0;
+  --slate: #1f3a4d;
+  --slate-deep: #13283a;
+  --slate-2: #2d5068;
+  --slate-tint: #e7edf0;
+  --on-slate: #f3f6f7;
+  --on-slate-2: #c3d1d9;
+  --amber: #f2b544;
+  --amber-deep: #dc9a1f;
+  --error: #b3261e;
+  --ok: #1d6b45;
+
+  --font-display: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
+  --font-body: 'Source Sans 3 Variable', 'Source Sans 3', system-ui, sans-serif;
+
+  --radius: 6px;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --max: 76rem;
+  --section: clamp(4rem, 9vw, 7.5rem);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 14px 32px -10px rgb(0 0 0 / 0.28);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  color-scheme: light;
+  accent-color: var(--slate);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--amber);
+  color: var(--ink);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-stretch: 88%;
+  font-weight: 760;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(2.5rem, 5.2vw, 4.4rem);
+  letter-spacing: -0.03em;
+}
+
+h2 {
+  font-size: clamp(2rem, 3.4vw, 2.9rem);
+}
+
+h3 {
+  font-size: 1.4rem;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--slate);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: var(--slate-2);
+  text-decoration-thickness: 2px;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+:focus-visible {
+  outline: 3px solid var(--amber);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+html {
+  scrollbar-color: #9aa8b1 var(--paper);
+}
+
+.wrap {
+  width: min(100% - 2 * var(--gutter), var(--max));
+  margin-inline: auto;
+}
+
+.section {
+  padding-block: var(--section);
+}
+
+.section--white {
+  background: var(--white);
+}
+
+.section--slate {
+  background: var(--slate);
+  color: var(--on-slate);
+}
+
+.section--slate a:not(.btn) {
+  color: var(--on-slate);
+}
+
+.lede {
+  font-size: clamp(1.15rem, 1.6vw, 1.3rem);
+  color: var(--ink-2);
+  max-width: 60ch;
+}
+
+.section--slate .lede {
+  color: var(--on-slate-2);
+}
+
+.section-head {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: clamp(2rem, 4vw, 3.25rem);
+  max-width: 44rem;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  background: var(--amber);
+  color: var(--ink);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius);
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Buttons */
+.btn {
+  --btn-bg: var(--slate);
+  --btn-fg: var(--white);
+  --btn-bg-hover: var(--slate-deep);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 3.25rem;
+  padding: 0.75rem 1.4rem;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font: inherit;
+  font-family: var(--font-display);
+  font-stretch: 92%;
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1.1;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 180ms var(--ease-out),
+    transform 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out);
+}
+
+.btn:hover {
+  background: var(--btn-bg-hover);
+  color: var(--btn-fg);
+  text-decoration: none;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn svg {
+  width: 1.2em;
+  height: 1.2em;
+  flex: none;
+}
+
+.btn--primary {
+  --btn-bg: var(--amber);
+  --btn-fg: var(--ink);
+  --btn-bg-hover: var(--amber-deep);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.08), 0 6px 16px -6px rgb(220 154 31 / 0.6);
+}
+
+.btn--ghost {
+  --btn-bg: transparent;
+  --btn-fg: var(--slate);
+  --btn-bg-hover: var(--slate-tint);
+  border-color: currentColor;
+}
+
+.section--slate .btn--ghost,
+.on-slate .btn--ghost {
+  --btn-fg: var(--on-slate);
+  --btn-bg-hover: rgb(255 255 255 / 0.1);
+}
+
+.btn[disabled],
+.btn[aria-busy='true'] {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 650;
+}
+
+.link-arrow svg {
+  width: 1.1em;
+  height: 1.1em;
+  transition: transform 180ms var(--ease-out);
+}
+
+.link-arrow:hover svg {
+  transform: translateX(3px);
+}
+
+/* Placeholder chips: anything the owner still has to supply. */
+.ph {
+  background: #fff3cf;
+  color: #6b4a00;
+  border: 1px dashed #c9941c;
+  border-radius: 4px;
+  padding: 0 0.35em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.section--slate .ph,
+.on-slate .ph {
+  background: rgb(242 181 68 / 0.16);
+  color: #ffe2a6;
+  border-color: rgb(242 181 68 / 0.7);
+}
+
+/* Checklist */
+.checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.checks li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+}
+
+.checks svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  color: var(--ok);
+  transform: translateY(0.18em);
+}
+
+.section--slate .checks svg {
+  color: var(--amber);
+}
+
+/* Page header band for inner pages */
+.page-hero {
+  background: var(--slate);
+  color: var(--on-slate);
+  padding-block: clamp(3.5rem, 8vw, 6rem) clamp(3rem, 6vw, 4.5rem);
+}
+
+.page-hero .lede {
+  color: var(--on-slate-2);
+  margin-top: 1.25rem;
+}
+
+.page-hero .crumbs {
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  color: var(--on-slate-2);
+}
+
+.page-hero .crumbs a {
+  color: var(--on-slate-2);
+}
+
+.prose {
+  max-width: 68ch;
+  display: grid;
+  gap: 1.1rem;
+}
+
+.prose h2 {
+  margin-top: 1.5rem;
+}

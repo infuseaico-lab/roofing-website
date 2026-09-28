@@ -1,0 +1,128 @@
+---
+import Icon from './Icon.astro';
+import Fill from './Fill.astro';
+import EstimateForm from './EstimateForm.astro';
+import { business, telHref, bookHref } from '../data/site';
+
+interface Props {
+  heading?: string;
+  formId?: string;
+}
+const { heading = 'Let’s take a look at your roof.', formId = 'estimate-bottom' } = Astro.props;
+---
+
+<section class="section section--slate cta-band" aria-labelledby={`${formId}-heading`}>
+  <div class="wrap cta-band__grid">
+    <div class="cta-band__copy">
+      <h2 id={`${formId}-heading`}>{heading}</h2>
+      <p class="lede">
+        Tell us what’s going on and we’ll set up a free inspection. You’ll get a written estimate, honest
+        repair-or-replace advice, and financing options if you want them.
+      </p>
+      <div class="cta-band__ways">
+        <a class="cta-way" href={telHref}>
+          <Icon name="phone" />
+          <span>
+            <strong>Call us</strong>
+            <span><Fill value={business.phone} label="(000) 000-0000" /></span>
+          </span>
+        </a>
+        <a class="cta-way" href={bookHref}>
+          <Icon name="calendar" />
+          <span>
+            <strong>Book online</strong>
+            <span>Pick an inspection time</span>
+          </span>
+        </a>
+      </div>
+      <p class="cta-band__emergency">
+        <Icon name="droplets" />
+        <span>
+          Active leak? Call now. <Fill value={business.emergencyHours} label="Emergency hours" />
+        </span>
+      </p>
+    </div>
+    <EstimateForm id={formId} />
+  </div>
+</section>
+
+<style>
+  .cta-band__grid {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 32rem);
+    gap: clamp(2.5rem, 6vw, 5rem);
+    align-items: center;
+  }
+
+  .cta-band__copy {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .cta-band__ways {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .cta-way {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.9rem 1.25rem 0.9rem 0.9rem;
+    border: 1px solid rgb(255 255 255 / 0.22);
+    border-radius: var(--radius);
+    text-decoration: none;
+    transition: background-color 180ms var(--ease-out), border-color 180ms var(--ease-out);
+  }
+
+  .cta-way:hover {
+    background: rgb(255 255 255 / 0.07);
+    border-color: rgb(255 255 255 / 0.45);
+    text-decoration: none;
+  }
+
+  .cta-way > :global(svg) {
+    width: 2.6rem;
+    height: 2.6rem;
+    padding: 0.6rem;
+    border-radius: 50%;
+    background: var(--amber);
+    color: var(--ink);
+    flex: none;
+  }
+
+  .cta-way > span {
+    display: grid;
+    line-height: 1.3;
+    color: var(--on-slate-2);
+    font-size: 0.98rem;
+  }
+
+  .cta-way strong {
+    color: var(--white);
+    font-size: 1.08rem;
+  }
+
+  .cta-band__emergency {
+    display: flex;
+    gap: 0.6rem;
+    align-items: baseline;
+    color: var(--on-slate-2);
+  }
+
+  .cta-band__emergency :global(svg) {
+    width: 1.15rem;
+    height: 1.15rem;
+    color: var(--amber);
+    flex: none;
+    transform: translateY(0.18em);
+  }
+
+  @media (max-width: 900px) {
+    .cta-band__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

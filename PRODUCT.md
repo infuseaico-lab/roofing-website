@@ -47,6 +47,8 @@ A family-owned roofer with a long local history, backed by manufacturer certific
 
 Family-owned identity and long local history are core to the voice. A logo exists but has not been added to the repo yet.
 
+Standing preference (chosen in the first direction round): the site follows the category standard for a residential roofing contractor (photo-led hero, estimate form, trust badges, services, reviews, financing, service area), executed at the craft level of the best national and top local roofing sites. It must still not read as a generic contractor template: quality comes from real proof, precise type, and local specificity, not a different visual concept.
+
 ## Evidence on Hand
 
 The owner has all of the following, but none of it is in the repository yet:

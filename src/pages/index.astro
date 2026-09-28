@@ -1,0 +1,534 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Fill from '../components/Fill.astro';
+import Photo from '../components/Photo.astro';
+import TrustRow from '../components/TrustRow.astro';
+import EstimateForm from '../components/EstimateForm.astro';
+import Reviews from '../components/Reviews.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { business, services, steps, areas, telHref, bookHref } from '../data/site';
+
+const reasons = [
+  {
+    icon: 'users',
+    title: 'Family-owned and local',
+    text: 'You deal with the family that owns the company, not a call center. Our name is on every roof we put on in LA and Orange County.',
+  },
+  {
+    icon: 'award',
+    title: 'Certified installs, warranties in writing',
+    text: 'Our crews install to the manufacturer’s spec, so your roof qualifies for the manufacturer warranty, plus our own workmanship warranty.',
+  },
+  {
+    icon: 'clock',
+    title: 'We show up fast',
+    text: 'Leaks don’t wait for a convenient week. We respond quickly to active leaks and storm damage and protect the house first.',
+  },
+  {
+    icon: 'wallet',
+    title: 'Free estimates and financing',
+    text: 'The estimate costs nothing, and financing lets you fix the roof now and pay over time.',
+  },
+];
+---
+
+<Base
+  title="Family-Owned Roofing in Los Angeles & Orange County"
+  description="Family-owned residential roofing for Los Angeles and Orange County. Roof repair, replacement, and emergency leak response. Certified installs, written warranties, free estimates, and financing."
+>
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero__grid">
+      <div class="hero__copy">
+        <h1 id="hero-title">Family-owned roofing for Los Angeles &amp; Orange County homes.</h1>
+        <p class="hero__lede">
+          Repairs, replacements, and fast leak response from a local family crew. Certified installs, warranties in
+          writing, free estimates, and financing that makes a new roof doable now.
+        </p>
+        <div class="hero__actions">
+          <a class="btn btn--ghost" href={telHref}>
+            <Icon name="phone" />
+            Call <Fill value={business.phone} label="(000) 000-0000" />
+          </a>
+          <a class="hero__book link-arrow" href={bookHref}>
+            <Icon name="calendar" /> Book an inspection online
+          </a>
+        </div>
+        <TrustRow onSlate />
+      </div>
+      <div class="hero__form">
+        <EstimateForm compact id="estimate-hero" />
+      </div>
+    </div>
+
+    <div class="wrap hero__photos" aria-label="Recent projects">
+      <Photo label="Finished roof replacement" ratio="4 / 3" eager />
+      <Photo label="Crew at work" ratio="4 / 3" />
+      <Photo label="Before and after" ratio="4 / 3" />
+    </div>
+  </section>
+
+  <section class="section services" aria-labelledby="services-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="services-title">Roofing services for your home</h2>
+        <p class="lede">
+          From a single slipped tile to a full tear-off, we handle residential roofs start to finish with our own crew.
+        </p>
+      </div>
+      <div class="services__grid">
+        {
+          services.map((s) => (
+            <article class="service">
+              <Photo label={s.photoLabel} ratio="16 / 10" />
+              <div class="service__body">
+                <h3>
+                  <Icon name={s.icon} />
+                  {s.title}
+                </h3>
+                <p>{s.lede}</p>
+                <a class="link-arrow" href={`/services/#${s.slug}`}>
+                  More about {s.title.toLowerCase()} <Icon name="arrow-right" />
+                </a>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--white why" aria-labelledby="why-title">
+    <div class="wrap why__grid">
+      <Photo class="why__photo" label="The family and crew" ratio="4 / 5" />
+      <div class="why__copy">
+        <h2 id="why-title">A family name on every roof we build.</h2>
+        <p class="lede">
+          Homeowners pick us because they want a roofer who answers the phone, shows up when they say, and stands
+          behind the work for years.
+        </p>
+        <dl class="reasons">
+          {
+            reasons.map((r) => (
+              <div class="reason">
+                <dt>
+                  <Icon name={r.icon} />
+                  {r.title}
+                </dt>
+                <dd>{r.text}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="section process" aria-labelledby="process-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="process-title">How it works</h2>
+        <p class="lede">Four steps, no surprises. You’ll know what we found, what it costs, and what’s covered.</p>
+      </div>
+      <ol class="steps">
+        {
+          steps.map((step, i) => (
+            <li class="step">
+              <span class="step__n" aria-hidden="true">
+                {i + 1}
+              </span>
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section class="section section--white financing" aria-labelledby="financing-title">
+    <div class="wrap financing__grid">
+      <div>
+        <h2 id="financing-title">A new roof now, paid over time.</h2>
+      </div>
+      <div class="financing__copy">
+        <p class="lede">
+          A roof that’s failing can’t wait for the perfect month. Ask about financing when we give you your estimate
+          and we’ll walk you through the options, plainly, with no pressure.
+        </p>
+        <ul class="checks">
+          <li><Icon name="check" /> Free, written estimate first</li>
+          <li><Icon name="check" /> Monthly payment options for repairs and replacements</li>
+          <li><Icon name="check" /> Terms explained before you sign anything</li>
+        </ul>
+        <a class="btn btn--ghost" href="/financing/">How financing works <Icon name="arrow-right" /></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reviews-section" aria-labelledby="reviews-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="reviews-title">What your neighbors say</h2>
+        <p class="lede">Real reviews from homeowners across Los Angeles and Orange County.</p>
+      </div>
+      <Reviews />
+    </div>
+  </section>
+
+  <section class="section section--white area" aria-labelledby="area-title">
+    <div class="wrap area__grid">
+      <div class="area__copy">
+        <h2 id="area-title">Serving homes across LA and Orange County</h2>
+        <p class="lede">
+          From the South Bay to the Antelope Valley and from Anaheim down to San Clemente. Don’t see your city? Call
+          and ask; if we can get there, we’ll come.
+        </p>
+        <a class="link-arrow" href="/service-areas/">See all service areas <Icon name="arrow-right" /></a>
+      </div>
+      <div class="area__lists">
+        {
+          Object.entries(areas).map(([county, cities]) => (
+            <div>
+              <h3>
+                <Icon name="map-pin" /> {county}
+              </h3>
+              <ul>
+                {cities.slice(0, 10).map((c) => (
+                  <li>{c}</li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <CtaBand />
+</Base>
+
+<style>
+  .hero {
+    background: var(--slate);
+    color: var(--on-slate);
+    padding-top: clamp(3rem, 7vw, 5.5rem);
+    margin-bottom: clamp(6rem, 12vw, 9rem);
+  }
+
+  .hero__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 30rem);
+    gap: clamp(2.5rem, 5vw, 4.5rem);
+    align-items: center;
+  }
+
+  .hero__copy {
+    display: grid;
+    gap: 1.75rem;
+    align-content: center;
+  }
+
+  .hero h1 {
+    color: var(--white);
+    max-width: 16ch;
+  }
+
+  .hero__lede {
+    font-size: clamp(1.15rem, 1.7vw, 1.32rem);
+    color: var(--on-slate-2);
+    max-width: 52ch;
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.75rem;
+  }
+
+  .hero__actions .btn--ghost {
+    --btn-fg: var(--white);
+    --btn-bg-hover: rgb(255 255 255 / 0.1);
+  }
+
+  .hero__book {
+    color: var(--white) !important;
+    text-decoration: underline;
+    text-decoration-color: rgb(242 181 68 / 0.8);
+  }
+
+  .hero__book :global(svg:first-child) {
+    color: var(--amber);
+  }
+
+  .hero__photos {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: clamp(0.75rem, 1.5vw, 1.25rem);
+    margin-top: clamp(3rem, 6vw, 4.5rem);
+    margin-bottom: calc(-1 * clamp(6rem, 12vw, 9rem));
+    position: relative;
+  }
+
+  .hero__photos :global(.photo) {
+    aspect-ratio: auto;
+    height: clamp(13rem, 22vw, 20rem);
+    box-shadow: var(--shadow);
+    animation: rise 900ms var(--ease-out) both;
+  }
+
+  .hero__photos :global(.photo:nth-child(2)) {
+    animation-delay: 90ms;
+  }
+
+  .hero__photos :global(.photo:nth-child(3)) {
+    animation-delay: 180ms;
+  }
+
+  @keyframes rise {
+    from {
+      transform: translateY(28px);
+    }
+  }
+
+  /* Services */
+  .services__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(2.5rem, 5vw, 4rem) clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .service {
+    display: grid;
+    gap: 1.5rem;
+    align-content: start;
+  }
+
+  .service__body {
+    display: grid;
+    gap: 0.85rem;
+    justify-items: start;
+  }
+
+  .service h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.6rem;
+  }
+
+  .service h3 :global(svg) {
+    width: 1.6rem;
+    height: 1.6rem;
+    color: var(--slate-2);
+    flex: none;
+  }
+
+  .service p {
+    color: var(--ink-2);
+    max-width: 58ch;
+  }
+
+  /* Why us */
+  .why__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(2.5rem, 6vw, 5.5rem);
+    align-items: center;
+  }
+
+  .why__copy {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .reasons {
+    margin: 1rem 0 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem 2.5rem;
+  }
+
+  .reason dt {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-family: var(--font-display);
+    font-stretch: 90%;
+    font-weight: 720;
+    font-size: 1.2rem;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+  }
+
+  .reason dt :global(svg) {
+    width: 1.35rem;
+    height: 1.35rem;
+    color: var(--amber-deep);
+    flex: none;
+  }
+
+  .reason dd {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 1.05rem;
+  }
+
+  /* Process */
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2rem;
+    counter-reset: step;
+  }
+
+  .step {
+    display: grid;
+    gap: 0.75rem;
+    align-content: start;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--line);
+    position: relative;
+  }
+
+  .step__n {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: var(--slate);
+    color: var(--white);
+    font-family: var(--font-display);
+    font-weight: 780;
+    font-size: 1.15rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .step p {
+    color: var(--ink-2);
+    font-size: 1.05rem;
+  }
+
+  /* Financing */
+  .financing__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: start;
+  }
+
+  .financing h2 {
+    font-size: clamp(2.2rem, 4.2vw, 3.5rem);
+    max-width: 13ch;
+  }
+
+  .financing__copy {
+    display: grid;
+    gap: 1.5rem;
+    justify-items: start;
+  }
+
+  /* Area */
+  .area__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: start;
+  }
+
+  .area__copy {
+    display: grid;
+    gap: 1.25rem;
+    justify-items: start;
+  }
+
+  .area__lists {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .area__lists h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 1.2rem;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .area__lists h3 :global(svg) {
+    width: 1.2rem;
+    height: 1.2rem;
+    color: var(--amber-deep);
+  }
+
+  .area__lists ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    columns: 2;
+    column-gap: 1.25rem;
+    font-size: 1.02rem;
+  }
+
+  .area__lists li {
+    padding-block: 0.2rem;
+    break-inside: avoid;
+  }
+
+  @media (max-width: 1020px) {
+    .hero__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .hero__form {
+      max-width: 36rem;
+    }
+
+    .steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 860px) {
+    .why__grid,
+    .financing__grid,
+    .area__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .why__grid :global(.why__photo) {
+      aspect-ratio: 16 / 10;
+    }
+
+    .services__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .hero__photos {
+      grid-template-columns: 1fr;
+    }
+
+    .hero__photos :global(.photo:not(:first-child)) {
+      display: none;
+    }
+
+    .reasons,
+    .steps {
+      grid-template-columns: 1fr;
+    }
+
+    .area__lists {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

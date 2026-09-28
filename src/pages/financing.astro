@@ -1,0 +1,207 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import Icon from '../components/Icon.astro';
+import CtaBand from '../components/CtaBand.astro';
+
+const faqs = [
+  {
+    q: 'What can I finance?',
+    a: 'Roof replacements and larger repairs. Ask during your estimate and we’ll tell you what applies to your project.',
+  },
+  {
+    q: 'Will applying affect my credit?',
+    a: '<span class="ph">Answer from your financing provider</span> Many providers let you check options with a soft credit inquiry. Confirm how yours works before publishing this answer.',
+  },
+  {
+    q: 'What are the rates and terms?',
+    a: 'They depend on the plan and your credit, so we don’t publish a single number. We’ll show you the actual terms in writing before you sign anything.',
+  },
+  {
+    q: 'Do I still get a free estimate?',
+    a: 'Yes. The inspection and written estimate are free whether or not you finance.',
+  },
+];
+---
+
+<Base
+  title="Roof Financing"
+  description="Financing options for roof repairs and replacements in Los Angeles and Orange County. Free estimates, with terms explained in writing before you sign."
+>
+  <PageHero
+    crumb="Financing"
+    title="Fix the roof now. Pay over time."
+    lede="A failing roof can’t wait for the perfect month. Financing lets you protect your home today with monthly payments that fit your budget."
+  />
+
+  <section class="section section--white">
+    <div class="wrap fin">
+      <div class="fin__steps">
+        <h2>How it works</h2>
+        <ol>
+          <li>
+            <strong>Get your free estimate.</strong>
+            <span>We inspect the roof and give you a written, itemized price.</span>
+          </li>
+          <li>
+            <strong>Ask about monthly options.</strong>
+            <span>We’ll show you the plans available for your project and how the terms work.</span>
+          </li>
+          <li>
+            <strong>Decide with no pressure.</strong>
+            <span>Take the paperwork home. Nothing is final until you sign.</span>
+          </li>
+        </ol>
+      </div>
+      <aside class="fin__note">
+        <Icon name="wallet" />
+        <h2>Financing partner</h2>
+        <p>
+          <span class="ph">Provider name and details</span> Add your financing provider, a link to its application,
+          and any terms it lets you advertise. Don’t publish rates or “0% down” offers without the provider’s approved
+          wording.
+        </p>
+        <a class="btn btn--primary" href="/contact/">Get my free estimate <Icon name="arrow-right" /></a>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head"><h2>Financing questions</h2></div>
+      <div class="faq">
+        {
+          faqs.map((f) => (
+            <details>
+              <summary>
+                {f.q}
+                <Icon name="plus" />
+              </summary>
+              <p set:html={f.a} />
+            </details>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <CtaBand />
+</Base>
+
+<style>
+  .fin {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: start;
+  }
+
+  .fin__steps ol {
+    list-style: none;
+    counter-reset: s;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  .fin__steps li {
+    counter-increment: s;
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    column-gap: 1rem;
+  }
+
+  .fin__steps li::before {
+    content: counter(s);
+    grid-row: span 2;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: var(--slate);
+    color: var(--white);
+    font-family: var(--font-display);
+    font-weight: 780;
+  }
+
+  .fin__steps strong {
+    font-size: 1.2rem;
+  }
+
+  .fin__steps span {
+    color: var(--ink-2);
+  }
+
+  .fin__note {
+    display: grid;
+    gap: 1rem;
+    justify-items: start;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .fin__note > :global(svg) {
+    width: 2.25rem;
+    height: 2.25rem;
+    color: var(--amber-deep);
+  }
+
+  .fin__note h2 {
+    font-size: 1.6rem;
+  }
+
+  .faq {
+    max-width: 50rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .faq details {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .faq summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding-block: 1.25rem;
+    font-family: var(--font-display);
+    font-stretch: 90%;
+    font-weight: 700;
+    font-size: 1.25rem;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq summary :global(svg) {
+    width: 1.4rem;
+    height: 1.4rem;
+    flex: none;
+    color: var(--slate-2);
+    transition: transform 200ms var(--ease-out);
+  }
+
+  .faq details[open] summary :global(svg) {
+    transform: rotate(45deg);
+  }
+
+  .faq details p {
+    padding-bottom: 1.5rem;
+    color: var(--ink-2);
+    max-width: 65ch;
+  }
+
+  @media (max-width: 860px) {
+    .fin {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

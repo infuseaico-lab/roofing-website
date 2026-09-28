@@ -1,0 +1,21 @@
+---
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+
+interface Props {
+  name: string;
+  class?: string;
+  size?: number;
+}
+
+const { name, class: className, size } = Astro.props;
+const require = createRequire(import.meta.url);
+const raw = readFileSync(require.resolve(`lucide-static/icons/${name}.svg`), 'utf8');
+const svg = raw
+  .replace(/<!--[\s\S]*?-->/g, '')
+  .replace(/\s(width|height)="24"/g, ` $1="${size ?? 24}"`)
+  .replace('class="lucide', `aria-hidden="true" focusable="false" class="${className ?? ''} lucide`)
+  .replace(/stroke-width="2"/, 'stroke-width="1.9"');
+---
+
+<Fragment set:html={svg} />

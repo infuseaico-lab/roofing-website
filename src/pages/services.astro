@@ -1,0 +1,118 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import Icon from '../components/Icon.astro';
+import Photo from '../components/Photo.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { services } from '../data/site';
+---
+
+<Base
+  title="Roof Repair, Replacement & Emergency Leak Service"
+  description="Residential roof repair, full roof replacement, emergency leak and storm response, and free inspections across Los Angeles and Orange County."
+>
+  <PageHero
+    crumb="Services"
+    title="Roofing services, start to finish."
+    lede="Everything your home’s roof needs, handled by our own family-run crew, with a free written estimate before any work begins."
+  >
+    <ul class="jump" aria-label="Jump to a service">
+      {services.map((s) => <li><a href={`#${s.slug}`}>{s.title}</a></li>)}
+    </ul>
+  </PageHero>
+
+  {
+    services.map((s, i) => (
+      <section class:list={['section', 'svc', { 'section--white': i % 2 === 1 }]} id={s.slug} aria-labelledby={`${s.slug}-title`}>
+        <div class:list={['wrap', 'svc__grid', { 'svc__grid--flip': i % 2 === 1 }]}>
+          <Photo label={s.photoLabel} ratio="4 / 3" />
+          <div class="svc__copy">
+            <h2 id={`${s.slug}-title`}>
+              <Icon name={s.icon} /> {s.title}
+            </h2>
+            <p class="lede">{s.lede}</p>
+            <ul class="checks">
+              {s.points.map((p) => (
+                <li>
+                  <Icon name="check" /> {p}
+                </li>
+              ))}
+            </ul>
+            <a class="btn btn--primary" href="/contact/">
+              Get a free estimate <Icon name="arrow-right" />
+            </a>
+          </div>
+        </div>
+      </section>
+    ))
+  }
+
+  <CtaBand heading="Not sure what your roof needs?" />
+</Base>
+
+<style>
+  .jump {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .jump a {
+    display: inline-block;
+    padding: 0.55rem 1rem;
+    border: 1px solid rgb(255 255 255 / 0.3);
+    border-radius: 999px;
+    color: var(--on-slate);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .jump a:hover {
+    background: rgb(255 255 255 / 0.1);
+    color: var(--white);
+  }
+
+  .svc__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: center;
+  }
+
+  .svc__grid--flip > :global(.photo) {
+    order: 2;
+  }
+
+  .svc__copy {
+    display: grid;
+    gap: 1.5rem;
+    justify-items: start;
+  }
+
+  .svc h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .svc h2 :global(svg) {
+    width: 2rem;
+    height: 2rem;
+    color: var(--amber-deep);
+    flex: none;
+  }
+
+  @media (max-width: 860px) {
+    .svc__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .svc__grid--flip > :global(.photo) {
+      order: 0;
+    }
+  }
+</style>

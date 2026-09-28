@@ -1,0 +1,148 @@
+---
+import Icon from './Icon.astro';
+import Fill from './Fill.astro';
+import { business, displayName, nav, services, areas, telHref, bookHref } from '../data/site';
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="wrap site-footer__grid">
+    <div class="site-footer__brand">
+      <p class="site-footer__name"><Fill value={business.name} label="Company name" /></p>
+      <p>Family-owned residential roofing for homeowners across Los Angeles and Orange County.</p>
+      <ul class="site-footer__contact">
+        <li><Icon name="phone" /><a href={telHref}><Fill value={business.phone} label="(000) 000-0000" /></a></li>
+        <li>
+          <Icon name="mail" />
+          {business.email ? <a href={`mailto:${business.email}`}>{business.email}</a> : <Fill label="Email" />}
+        </li>
+        <li><Icon name="map-pin" /><Fill value={business.address} label="Business address" /></li>
+        <li><Icon name="clock" /><span><Fill value={business.hours} label="Business hours" /></span></li>
+      </ul>
+    </div>
+
+    <nav aria-label="Services">
+      <h2 class="site-footer__h">Services</h2>
+      <ul>
+        {services.map((s) => <li><a href={`/services/#${s.slug}`}>{s.title}</a></li>)}
+      </ul>
+    </nav>
+
+    <nav aria-label="Company">
+      <h2 class="site-footer__h">Company</h2>
+      <ul>
+        {nav.map((n) => <li><a href={n.href}>{n.label}</a></li>)}
+        <li><a href={bookHref}>Book an inspection</a></li>
+      </ul>
+    </nav>
+
+    <div>
+      <h2 class="site-footer__h">Where we work</h2>
+      <p>{Object.keys(areas).join(' and ')}, including {Object.values(areas).flat().slice(0, 6).join(', ')} and more.</p>
+      <a class="link-arrow" href="/service-areas/">All service areas <Icon name="arrow-right" /></a>
+    </div>
+  </div>
+
+  <div class="wrap site-footer__legal">
+    <p>
+      © {year} {displayName}. CA Contractor License <Fill value={business.license ? `#${business.license}` : ''} label="#000000" />.
+      Licensed and insured.
+    </p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--slate-deep);
+    color: var(--on-slate-2);
+    padding-top: clamp(3.5rem, 7vw, 5rem);
+    font-size: 1rem;
+  }
+
+  .site-footer a {
+    color: var(--on-slate);
+    text-decoration: none;
+  }
+
+  .site-footer a:hover {
+    color: var(--white);
+    text-decoration: underline;
+  }
+
+  .site-footer__grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1.3fr;
+    gap: 2.5rem;
+  }
+
+  .site-footer__brand {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+  }
+
+  .site-footer__name {
+    font-family: var(--font-display);
+    font-stretch: 88%;
+    font-weight: 780;
+    font-size: 1.35rem;
+    color: var(--white);
+  }
+
+  .site-footer ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .site-footer__contact li {
+    display: flex;
+    gap: 0.6rem;
+    align-items: baseline;
+  }
+
+  .site-footer__contact :global(svg) {
+    width: 1.05rem;
+    height: 1.05rem;
+    color: var(--amber);
+    flex: none;
+    transform: translateY(0.15em);
+  }
+
+  .site-footer__h {
+    font-size: 1rem;
+    color: var(--white);
+    margin-bottom: 1rem;
+    letter-spacing: 0;
+  }
+
+  .site-footer .link-arrow {
+    margin-top: 0.75rem;
+    color: var(--amber);
+  }
+
+  .site-footer__legal {
+    margin-top: 3.5rem;
+    padding-block: 1.5rem;
+    border-top: 1px solid rgb(255 255 255 / 0.12);
+    font-size: 0.92rem;
+  }
+
+  @media (max-width: 900px) {
+    .site-footer__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .site-footer__brand {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .site-footer__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,183 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import Icon from '../components/Icon.astro';
+import Fill from '../components/Fill.astro';
+import Photo from '../components/Photo.astro';
+import TrustRow from '../components/TrustRow.astro';
+import Reviews from '../components/Reviews.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { business, certifications, displayName } from '../data/site';
+
+const commitments = [
+  { title: 'We answer the phone', text: 'You reach a person who can actually help, and usually someone from the family.' },
+  { title: 'We say what we found', text: 'Photos from your roof, plain explanations, and an itemized written estimate.' },
+  { title: 'We use our own crew', text: 'The people on your roof work for us and are trained to the manufacturer’s installation spec.' },
+  { title: 'We stand behind it', text: 'Manufacturer and workmanship warranties, in writing, for your records.' },
+];
+---
+
+<Base
+  title="About Our Family Roofing Company"
+  description="A family-owned roofing company serving homeowners in Los Angeles and Orange County, with certified installs, written warranties, and free estimates."
+>
+  <PageHero crumb="About us" title="A local family business, built one roof at a time.">
+    <p class="lede">
+      {displayName} is family-owned and has served homeowners in Los Angeles and Orange County
+      {business.foundedYear ? ` since ${business.foundedYear}` : <Fragment> since <Fill label="year founded" /></Fragment>}.
+    </p>
+  </PageHero>
+
+  <section class="section section--white">
+    <div class="wrap story">
+      <Photo label="The family" ratio="4 / 5" />
+      <div class="prose">
+        <h2>Our story</h2>
+        <p>
+          <span class="ph">Your story</span> Tell homeowners who started the company, when, and why. Who runs it today?
+          Which family members will they meet? Two or three short paragraphs in your own words work best, and they are the
+          most-read part of this page.
+        </p>
+        <p>
+          We do residential roofing only: repairs, replacements, emergency leak response, and inspections. Our crews
+          install to the manufacturer’s specifications, so your new roof carries the manufacturer’s warranty along with
+          our own workmanship warranty.
+        </p>
+        <TrustRow />
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>What you can expect from us</h2>
+      </div>
+      <dl class="commit">
+        {
+          commitments.map((c) => (
+            <div>
+              <dt>
+                <Icon name="check" /> {c.title}
+              </dt>
+              <dd>{c.text}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <section class="section section--white">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Certifications and credentials</h2>
+        <p class="lede">Licensed by the California Contractors State License Board and fully insured.</p>
+      </div>
+      <ul class="badges">
+        {
+          certifications.length
+            ? certifications.map((c) => <li class="badge">{c}</li>)
+            : ['Manufacturer badge', 'Manufacturer badge', 'Proof of insurance', 'BBB or trade association'].map((l) => (
+                <li class="badge badge--slot">
+                  <Icon name="award" />
+                  <span class="ph">{l}</span>
+                </li>
+              ))
+        }
+        <li class="badge">
+          <Icon name="badge-check" />
+          <span>CA License <Fill value={business.license ? `#${business.license}` : ''} label="#000000" /></span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head"><h2>What homeowners say</h2></div>
+      <Reviews />
+    </div>
+  </section>
+
+  <CtaBand />
+</Base>
+
+<style>
+  .story {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: center;
+  }
+
+  .commit {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2.25rem 3rem;
+  }
+
+  .commit dt {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    font-family: var(--font-display);
+    font-stretch: 90%;
+    font-weight: 720;
+    font-size: 1.35rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .commit dt :global(svg) {
+    width: 1.4rem;
+    height: 1.4rem;
+    color: var(--ok);
+  }
+
+  .commit dd {
+    margin: 0;
+    color: var(--ink-2);
+    max-width: 48ch;
+  }
+
+  .badges {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: 1rem;
+  }
+
+  .badge {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 0.6rem;
+    min-height: 8.5rem;
+    padding: 1.25rem;
+    text-align: center;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-weight: 650;
+  }
+
+  .badge--slot {
+    border-style: dashed;
+    background: var(--paper);
+  }
+
+  .badge :global(svg) {
+    width: 2rem;
+    height: 2rem;
+    color: var(--slate-2);
+  }
+
+  @media (max-width: 860px) {
+    .story,
+    .commit {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

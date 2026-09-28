@@ -2,3 +2,7 @@ __pycache__/
 .impeccable/hook.cache.json
 .impeccable/hook.pending.json
 .claude/settings.local.json
+node_modules/
+dist/
+.astro/
+.impeccable/review/

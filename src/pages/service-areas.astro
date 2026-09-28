@@ -1,0 +1,100 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import Icon from '../components/Icon.astro';
+import Fill from '../components/Fill.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { areas, business, telHref } from '../data/site';
+---
+
+<Base
+  title="Roofing Service Areas in Los Angeles & Orange County"
+  description="We repair and replace residential roofs across Los Angeles County and Orange County, from Long Beach and Pasadena to Irvine and San Clemente."
+>
+  <PageHero
+    crumb="Service areas"
+    title="Roofing across Los Angeles and Orange County."
+    lede="Our crews work in homes throughout both counties. If your city isn’t listed, call and ask; if we can get there, we’ll come."
+  />
+
+  <section class="section section--white">
+    <div class="wrap counties">
+      {
+        Object.entries(areas).map(([county, cities]) => (
+          <section class="county" aria-labelledby={county.replace(/\W+/g, '-')}>
+            <h2 id={county.replace(/\W+/g, '-')}>
+              <Icon name="map-pin" /> {county}
+            </h2>
+            <ul>
+              {cities.map((c) => (
+                <li>{c}</li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+    <div class="wrap ask">
+      <p>
+        Not sure if you’re in our area?
+        <a href={telHref}>Call <Fill value={business.phone} label="(000) 000-0000" /></a> or
+        <a href="/contact/">send us your ZIP code</a>.
+      </p>
+    </div>
+  </section>
+
+  <CtaBand />
+</Base>
+
+<style>
+  .counties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 6vw, 5rem);
+  }
+
+  .county h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .county h2 :global(svg) {
+    width: 1.75rem;
+    height: 1.75rem;
+    color: var(--amber-deep);
+  }
+
+  .county ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    columns: 2;
+    column-gap: 2rem;
+    font-size: 1.12rem;
+  }
+
+  .county li {
+    padding-block: 0.5rem;
+    border-bottom: 1px solid var(--line);
+    break-inside: avoid;
+  }
+
+  .ask {
+    margin-top: 3rem;
+    font-size: 1.15rem;
+  }
+
+  .ask a {
+    font-weight: 700;
+  }
+
+  @media (max-width: 760px) {
+    .counties {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

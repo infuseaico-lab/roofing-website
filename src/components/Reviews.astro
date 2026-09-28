@@ -1,0 +1,110 @@
+---
+import Icon from './Icon.astro';
+import { reviews, business } from '../data/site';
+
+// Shows real reviews from site.ts. Until those exist it shows labeled slots, never invented quotes.
+const slots = reviews.length ? reviews : [null, null, null];
+---
+
+<div class="reviews">
+  {
+    slots.map((r) =>
+      r ? (
+        <figure class="review">
+          <div class="review__stars" aria-label="5 out of 5 stars">
+            {[1, 2, 3, 4, 5].map(() => <Icon name="star" />)}
+          </div>
+          <blockquote>
+            <p>“{r.quote}”</p>
+          </blockquote>
+          <figcaption>
+            <strong>{r.name}</strong>
+            <span>
+              {r.city} · {r.source}
+            </span>
+          </figcaption>
+        </figure>
+      ) : (
+        <figure class="review review--slot">
+          <blockquote>
+            <p>
+              <span class="ph">Customer review</span> Paste a real review here with the customer’s permission. Short and
+              specific works best: what went wrong, what the crew did, how the roof has held up.
+            </p>
+          </blockquote>
+          <figcaption>
+            <strong>
+              <span class="ph">First name, last initial</span>
+            </strong>
+            <span>
+              <span class="ph">City</span> · Google
+            </span>
+          </figcaption>
+        </figure>
+      ),
+    )
+  }
+</div>
+{
+  business.googleReviewsUrl && (
+    <p class="reviews__more">
+      <a class="link-arrow" href={business.googleReviewsUrl} rel="noopener" target="_blank">
+        Read all our reviews on Google <Icon name="arrow-right" />
+      </a>
+    </p>
+  )
+}
+
+<style>
+  .reviews {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  .review {
+    margin: 0;
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .review__stars {
+    display: flex;
+    gap: 0.15rem;
+    color: var(--amber-deep);
+  }
+
+  .review__stars :global(svg) {
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: currentColor;
+  }
+
+  .review blockquote {
+    margin: 0;
+    font-size: 1.15rem;
+    line-height: 1.55;
+  }
+
+  .review--slot blockquote {
+    color: var(--ink-2);
+    font-size: 1.02rem;
+  }
+
+  .review figcaption {
+    display: grid;
+    font-size: 0.98rem;
+    color: var(--ink-2);
+  }
+
+  .review figcaption strong {
+    color: var(--ink);
+  }
+
+  .reviews__more {
+    margin-top: 2rem;
+  }
+</style>

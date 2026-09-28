@@ -1,0 +1,10 @@
+---
+// Renders a business fact, or a visible placeholder chip when it hasn't been supplied yet.
+interface Props {
+  value?: string;
+  label: string;
+}
+const { value, label } = Astro.props;
+---
+
+{value ? <Fragment>{value}</Fragment> : <span class="ph" title="Add this in src/data/site.ts">{label}</span>}

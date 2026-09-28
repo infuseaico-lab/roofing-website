@@ -1,0 +1,65 @@
+---
+import Icon from './Icon.astro';
+import Fill from './Fill.astro';
+import { business, certifications } from '../data/site';
+
+interface Props {
+  onSlate?: boolean;
+}
+const { onSlate = false } = Astro.props;
+---
+
+<ul class:list={['trust', { 'on-slate': onSlate }]} aria-label="Credentials">
+  <li>
+    <Icon name="users" />
+    <span>Family-owned{business.foundedYear ? ` since ${business.foundedYear}` : ''}</span>
+  </li>
+  <li>
+    <Icon name="badge-check" />
+    <span>CA License <Fill value={business.license ? `#${business.license}` : ''} label="#000000" /></span>
+  </li>
+  <li>
+    <Icon name="shield-check" />
+    <span>Licensed &amp; insured</span>
+  </li>
+  <li>
+    <Icon name="award" />
+    <span>
+      {certifications.length ? certifications[0] : <Fill label="Manufacturer certification" />}
+    </span>
+  </li>
+</ul>
+
+<style>
+  .trust {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    font-size: 0.98rem;
+    font-weight: 600;
+  }
+
+  .trust li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .trust :global(svg) {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--slate);
+    flex: none;
+  }
+
+  .on-slate {
+    color: var(--on-slate);
+  }
+
+  .on-slate :global(svg) {
+    color: var(--amber);
+  }
+</style>

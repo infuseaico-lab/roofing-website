@@ -1,0 +1,413 @@
+---
+import Icon from './Icon.astro';
+import Fill from './Fill.astro';
+import { business, services, telHref } from '../data/site';
+
+interface Props {
+  compact?: boolean;
+  id?: string;
+  heading?: string;
+}
+const { compact = false, id = 'estimate', heading = 'Get your free estimate' } = Astro.props;
+const uid = id;
+---
+
+<form
+  class:list={['estimate', { 'estimate--compact': compact }]}
+  id={uid}
+  action={business.formAction || undefined}
+  method="post"
+  novalidate
+  data-estimate-form
+  data-connected={business.formAction ? 'true' : 'false'}
+>
+  <div class="estimate__head">
+    <h2 class="estimate__title">{heading}</h2>
+    <p class="estimate__sub">No cost, no pressure. We’ll reply within one business day.</p>
+  </div>
+
+  <div class="estimate__grid">
+    <div class="field">
+      <label for={`${uid}-name`}>Your name</label>
+      <input id={`${uid}-name`} name="name" type="text" autocomplete="name" required />
+      <p class="field__error" id={`${uid}-name-err`} hidden>Please tell us your name.</p>
+    </div>
+
+    <div class="field">
+      <label for={`${uid}-phone`}>Phone</label>
+      <input id={`${uid}-phone`} name="phone" type="tel" autocomplete="tel" inputmode="tel" required />
+      <p class="field__error" id={`${uid}-phone-err`} hidden>Please enter a phone number we can reach you at.</p>
+    </div>
+
+    {
+      !compact && (
+        <div class="field">
+          <label for={`${uid}-email`}>
+            Email <span class="field__opt">(optional)</span>
+          </label>
+          <input id={`${uid}-email`} name="email" type="email" autocomplete="email" />
+          <p class="field__error" id={`${uid}-email-err`} hidden>
+            That email doesn’t look right. Check it, or leave it blank.
+          </p>
+        </div>
+      )
+    }
+
+    <div class="field">
+      <label for={`${uid}-zip`}>ZIP code</label>
+      <input
+        id={`${uid}-zip`}
+        name="zip"
+        type="text"
+        inputmode="numeric"
+        autocomplete="postal-code"
+        pattern="[0-9]{5}"
+        maxlength="5"
+        required
+      />
+      <p class="field__error" id={`${uid}-zip-err`} hidden>Please enter a 5-digit ZIP code.</p>
+    </div>
+
+    <div class:list={['field', { 'field--wide': !compact }]}>
+      <label for={`${uid}-service`}>What do you need?</label>
+      <div class="select">
+        <select id={`${uid}-service`} name="service">
+          {services.map((s) => <option value={s.slug}>{s.title}</option>)}
+          <option value="unsure">Not sure yet</option>
+        </select>
+        <Icon name="chevron-down" />
+      </div>
+    </div>
+
+    {
+      !compact && (
+        <div class="field field--wide">
+          <label for={`${uid}-details`}>
+            Tell us what’s going on <span class="field__opt">(optional)</span>
+          </label>
+          <textarea
+            id={`${uid}-details`}
+            name="details"
+            rows="4"
+            placeholder="e.g. Water stain on the bedroom ceiling after the last rain"
+          />
+        </div>
+      )
+    }
+
+    {
+      !compact && (
+        <fieldset class="field field--wide contact-pref">
+          <legend>Best way to reach you</legend>
+          <label>
+            <input type="radio" name="contact_pref" value="call" checked /> Call
+          </label>
+          <label>
+            <input type="radio" name="contact_pref" value="text" /> Text
+          </label>
+          <label>
+            <input type="radio" name="contact_pref" value="email" /> Email
+          </label>
+        </fieldset>
+      )
+    }
+  </div>
+
+  <button class="btn btn--primary estimate__submit" type="submit">
+    <span data-label>Request my free estimate</span>
+    <Icon name="arrow-right" />
+  </button>
+
+  <p class="estimate__alt">
+    Rather talk? <a href={telHref}>Call <Fill value={business.phone} label="(000) 000-0000" /></a>
+  </p>
+
+  <div class="estimate__status" role="status" aria-live="polite" data-status hidden></div>
+</form>
+
+<script>
+  const messages = {
+    success: '<strong>Thanks, we got it.</strong> We’ll be in touch within one business day. If water is coming in right now, please call us.',
+    error: '<strong>That didn’t send.</strong> Please check your connection and try again, or give us a call.',
+    offline: '<strong>Online requests aren’t connected yet.</strong> Please call us for now. (Site owner: set <code>formAction</code> in src/data/site.ts.)',
+  };
+
+  for (const form of document.querySelectorAll<HTMLFormElement>('[data-estimate-form]')) {
+    const status = form.querySelector<HTMLElement>('[data-status]')!;
+    const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const label = button.querySelector<HTMLElement>('[data-label]')!;
+
+    const check = (input: HTMLInputElement) => {
+      const err = form.querySelector<HTMLElement>(`#${input.id}-err`);
+      let ok = input.checkValidity();
+      if (input.type === 'tel' && input.value) ok = input.value.replace(/\D/g, '').length >= 10;
+      input.setAttribute('aria-invalid', String(!ok));
+      if (err) {
+        err.hidden = ok;
+        if (!ok) input.setAttribute('aria-describedby', err.id);
+        else input.removeAttribute('aria-describedby');
+      }
+      return ok;
+    };
+
+    form.querySelectorAll<HTMLInputElement>('input[required], input[type="email"]').forEach((input) => {
+      input.addEventListener('blur', () => input.value && check(input));
+      input.addEventListener('input', () => input.getAttribute('aria-invalid') === 'true' && check(input));
+    });
+
+    const show = (kind: keyof typeof messages) => {
+      status.hidden = false;
+      status.dataset.kind = kind;
+      status.innerHTML = messages[kind];
+    };
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const fields = [...form.querySelectorAll<HTMLInputElement>('input[required], input[type="email"]')];
+      const invalid = fields.filter((f) => !check(f));
+      if (invalid.length) {
+        invalid[0].focus();
+        return;
+      }
+      if (form.dataset.connected !== 'true') {
+        show('offline');
+        return;
+      }
+      button.setAttribute('aria-busy', 'true');
+      button.disabled = true;
+      label.textContent = 'Sending…';
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { Accept: 'application/json' },
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        form.reset();
+        show('success');
+      } catch {
+        show('error');
+      } finally {
+        button.removeAttribute('aria-busy');
+        button.disabled = false;
+        label.textContent = 'Request my free estimate';
+      }
+    });
+  }
+</script>
+
+<style>
+  .estimate {
+    background: var(--white);
+    color: var(--ink);
+    border-radius: var(--radius);
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    box-shadow: var(--shadow);
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  /* The form is always a white card, even inside slate sections. */
+  .estimate a:not(.btn) {
+    color: var(--slate);
+  }
+
+  .estimate :global(.ph) {
+    background: #fff3cf;
+    color: #6b4a00;
+    border-color: #c9941c;
+  }
+
+  .estimate__head {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .estimate__title {
+    font-size: clamp(1.5rem, 2.2vw, 1.85rem);
+  }
+
+  .estimate__sub {
+    color: var(--ink-2);
+    font-size: 1rem;
+  }
+
+  .estimate__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .estimate--compact .estimate__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .field {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .field--wide {
+    grid-column: 1 / -1;
+  }
+
+  .field label,
+  .field legend {
+    font-weight: 650;
+    font-size: 0.98rem;
+  }
+
+  .field__opt {
+    font-weight: 400;
+    color: var(--ink-2);
+  }
+
+  input[type='text'],
+  input[type='tel'],
+  input[type='email'],
+  select,
+  textarea {
+    width: 100%;
+    min-height: 3.1rem;
+    padding: 0.65rem 0.85rem;
+    font: inherit;
+    font-size: 1.05rem;
+    color: var(--ink);
+    background: var(--white);
+    border: 1.5px solid #b9bfc2;
+    border-radius: var(--radius);
+    transition:
+      border-color 150ms var(--ease-out),
+      box-shadow 150ms var(--ease-out);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 7rem;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #6b7780;
+  }
+
+  input:hover,
+  select:hover,
+  textarea:hover {
+    border-color: var(--slate-2);
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    border-color: var(--slate);
+    box-shadow: 0 0 0 3px rgb(242 181 68 / 0.55);
+  }
+
+  input[aria-invalid='true'] {
+    border-color: var(--error);
+    background: #fff8f7;
+  }
+
+  .field__error {
+    color: var(--error);
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+
+  .select {
+    position: relative;
+  }
+
+  select {
+    appearance: none;
+    padding-right: 2.75rem;
+    cursor: pointer;
+  }
+
+  .select :global(svg) {
+    position: absolute;
+    right: 0.85rem;
+    top: 50%;
+    width: 1.2rem;
+    height: 1.2rem;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--ink-2);
+  }
+
+  .contact-pref {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+  }
+
+  .contact-pref legend {
+    width: 100%;
+    margin-bottom: 0.35rem;
+  }
+
+  .contact-pref label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-weight: 500;
+    cursor: pointer;
+    min-height: 2.75rem;
+  }
+
+  .contact-pref input {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .estimate__submit {
+    width: 100%;
+    min-height: 3.5rem;
+    font-size: 1.12rem;
+  }
+
+  .estimate__alt {
+    text-align: center;
+    font-size: 0.98rem;
+    color: var(--ink-2);
+  }
+
+  .estimate__alt a {
+    font-weight: 700;
+  }
+
+  .estimate__status {
+    padding: 0.9rem 1rem;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    background: var(--slate-tint);
+  }
+
+  .estimate__status[data-kind='success'] {
+    background: #e5f3eb;
+    color: #154d32;
+  }
+
+  .estimate__status[data-kind='error'] {
+    background: #fbeae8;
+    color: #7d1a14;
+  }
+
+  .estimate__status[data-kind='offline'] {
+    background: #fff3cf;
+    color: #5c3f00;
+  }
+
+  @media (max-width: 480px) {
+    .estimate__grid,
+    .estimate--compact .estimate__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

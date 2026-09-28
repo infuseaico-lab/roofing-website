@@ -1,0 +1,76 @@
+---
+import Icon from './Icon.astro';
+
+// A project photo frame. Pass `src` once real photos are in public/images/;
+// until then it renders a clearly labeled slot so no stock image stands in for your work.
+interface Props {
+  src?: string;
+  alt?: string;
+  label: string;
+  ratio?: string;
+  class?: string;
+  eager?: boolean;
+}
+const { src, alt = '', label, ratio = '4 / 3', class: className = '', eager = false } = Astro.props;
+---
+
+<figure class:list={['photo', className]} style={`--ratio: ${ratio}`}>
+  {
+    src ? (
+      <img src={src} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+    ) : (
+      <div class="photo__slot" role="img" aria-label={`Photo placeholder: ${label}`}>
+        <Icon name="camera" />
+        <span class="photo__label">{label}</span>
+        <span class="photo__hint">Your project photo goes here</span>
+      </div>
+    )
+  }
+</figure>
+
+<style>
+  .photo {
+    margin: 0;
+    aspect-ratio: var(--ratio);
+    overflow: hidden;
+    background: var(--slate-2);
+  }
+
+  .photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .photo__slot {
+    height: 100%;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 0.35rem;
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--on-slate);
+    background: var(--slate-2);
+    outline: 1px dashed rgb(255 255 255 / 0.35);
+    outline-offset: -10px;
+  }
+
+  .photo__slot :global(svg) {
+    width: 2rem;
+    height: 2rem;
+    color: var(--amber);
+  }
+
+  .photo__label {
+    font-family: var(--font-display);
+    font-stretch: 90%;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .photo__hint {
+    font-size: 0.9rem;
+    color: var(--on-slate-2);
+  }
+</style>
