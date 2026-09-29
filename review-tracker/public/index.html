@@ -31,6 +31,7 @@
       <div class="brand"><span class="brand-mark" aria-hidden="true">★</span> Review Tracker</div>
       <div class="topbar-right">
         <span id="who" class="who"></span>
+        <button id="viewers-btn" class="btn admin-only">Viewer logins</button>
         <button id="logout" class="btn ghost">Sign out</button>
       </div>
     </header>
@@ -38,6 +39,7 @@
     <nav class="tabs admin-only" aria-label="Sections">
       <button class="tab" data-tab="reviews" aria-current="page">Reviews</button>
       <button class="tab" data-tab="companies">Companies</button>
+      <button class="tab" data-tab="posters">Posters</button>
     </nav>
 
     <main class="page" id="reviews-panel">
@@ -45,7 +47,7 @@
         <div class="stat"><span class="stat-num" id="stat-total">0</span><span class="stat-label">Total reviews</span></div>
         <div class="stat"><span class="stat-num" id="stat-live">0</span><span class="stat-label">Live</span></div>
         <div class="stat"><span class="stat-num" id="stat-pending">0</span><span class="stat-label">Pending / posted</span></div>
-        <div class="stat"><span class="stat-num" id="stat-unpaid">0</span><span class="stat-label">Unpaid</span></div>
+        <div class="stat hide-for-poster"><span class="stat-num" id="stat-unpaid">0</span><span class="stat-label">Unpaid</span></div>
       </section>
 
       <section class="toolbar">
@@ -53,7 +55,7 @@
           <input id="search" type="search" placeholder="Search client, listing, poster, review…" aria-label="Search">
           <select id="filter-client" aria-label="Client"><option value="">All clients</option></select>
           <select id="filter-status" aria-label="Status"><option value="">All statuses</option></select>
-          <select id="filter-paid" aria-label="Paid">
+          <select id="filter-paid" aria-label="Paid" class="hide-for-poster">
             <option value="">Any payment</option>
             <option value="yes">Paid</option>
             <option value="no">Unpaid</option>
@@ -61,7 +63,6 @@
         </div>
         <div class="actions">
           <button id="export-btn" class="btn">Export CSV</button>
-          <button id="viewers-btn" class="btn admin-only">Viewer logins</button>
           <button id="import-btn" class="btn admin-only">Import CSV</button>
           <button id="add-btn" class="btn primary admin-only">+ Add record</button>
         </div>
@@ -79,8 +80,8 @@
               <th data-sort="posterName">Poster name</th>
               <th>Review link</th>
               <th data-sort="status">Status</th>
-              <th data-sort="paid">Paid</th>
-              <th class="admin-only"><span class="sr-only">Actions</span></th>
+              <th data-sort="paid" class="hide-for-poster">Paid</th>
+              <th class="editor-only"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -124,7 +125,77 @@
         <p id="co-empty" class="empty" hidden></p>
       </div>
     </main>
+
+    <main class="page admin-only" id="posters-panel" hidden>
+      <section class="toolbar">
+        <p class="muted panel-note">Posters sign in with their own login. They see the reviews of their assigned companies and can only
+          update the poster name, review link and status.</p>
+        <div class="actions">
+          <button id="add-poster-btn" class="btn primary">+ Add poster</button>
+        </div>
+      </section>
+
+      <div class="table-wrap">
+        <table id="posters">
+          <thead>
+            <tr>
+              <th>Poster</th>
+              <th>Username</th>
+              <th>Companies</th>
+              <th class="num">Reviews posted</th>
+              <th><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p id="posters-empty" class="empty" hidden></p>
+      </div>
+    </main>
   </div>
+
+  <!-- Add / edit poster -->
+  <dialog id="poster-dialog">
+    <form id="poster-form" method="dialog">
+      <h2 id="poster-title">Add poster</h2>
+      <div class="grid">
+        <label class="span-2">Name <input id="poster-name" name="name" required autocomplete="off"></label>
+        <label>Username <input id="poster-username" name="username" required autocomplete="off"></label>
+        <label>Password <input id="poster-password" name="password" autocomplete="new-password" minlength="5"></label>
+      </div>
+      <fieldset class="company-picks">
+        <legend>Companies this poster works on</legend>
+        <div id="poster-companies" class="pick-grid"></div>
+      </fieldset>
+      <p class="error" id="poster-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn primary" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Poster: update a review's posting details -->
+  <dialog id="post-dialog">
+    <form id="post-form" method="dialog">
+      <h2>Update review</h2>
+      <dl class="post-summary">
+        <div><dt>Client</dt><dd id="post-client"></dd></div>
+        <div><dt>Listing</dt><dd id="post-listing"></dd></div>
+        <div class="span-2"><dt>Review to post</dt><dd><p id="post-review" class="post-review"></p>
+          <button type="button" class="btn small" id="post-copy">Copy review text</button></dd></div>
+      </dl>
+      <div class="grid">
+        <label>Poster name <input id="post-poster" name="posterName"></label>
+        <label>Status <select id="post-status" name="status"></select></label>
+        <label class="span-2">Review link <input id="post-link" name="reviewLink" type="url" placeholder="https://"></label>
+      </div>
+      <p class="error" id="post-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn primary" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
 
   <!-- Add / edit company -->
   <dialog id="company-dialog">
@@ -155,13 +226,14 @@
         <label>Listing <input name="listing"></label>
         <label>Pace <input name="pace"></label>
         <label>Post date <input name="postDate" type="date"></label>
-        <label>Poster name <input name="posterName"></label>
+        <label>Poster name <input name="posterName" list="poster-options"></label>
         <label>Status <select name="status"></select></label>
         <label class="span-2">Review link <input name="reviewLink" type="url" placeholder="https://"></label>
         <label class="span-2">Review <textarea name="review" rows="4"></textarea></label>
         <label class="check"><input name="paid" type="checkbox"> Paid</label>
       </div>
       <datalist id="client-options"></datalist>
+      <datalist id="poster-options"></datalist>
       <p class="error" id="record-error" role="alert" hidden></p>
       <div class="dialog-actions">
         <button type="button" class="btn ghost" data-close>Cancel</button>

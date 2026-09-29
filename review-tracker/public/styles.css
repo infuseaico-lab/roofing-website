@@ -96,7 +96,7 @@ label.check input { width: 18px; height: 18px; }
 
 .page { padding: 20px 24px 40px; max-width: 1500px; margin: 0 auto; display: grid; gap: 16px; }
 
-.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
 .stat {
   display: grid; gap: 2px; padding: 14px 16px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
@@ -111,6 +111,8 @@ label.check input { width: 18px; height: 18px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 body:not(.is-admin) .admin-only { display: none !important; }
+body:not(.is-admin):not(.is-poster) .editor-only { display: none !important; }
+body.is-poster .hide-for-poster { display: none !important; }
 
 /* ---------- tabs ---------- */
 
@@ -203,6 +205,17 @@ dialog h2 { margin: 0; font-size: 20px; }
 .viewer-form { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--subtle); }
 .viewer-form h3 { margin: 0; font-size: 16px; }
 input[readonly] { opacity: 0.7; }
+.company-picks { margin: 0; padding: 0; border: 0; }
+.company-picks legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 12px; max-height: 200px; overflow-y: auto; }
+.pick-grid label.check { font-size: 14px; font-weight: 400; }
+.pick-grid p { margin: 0; }
+td.warn { color: var(--pending-ink); }
+.panel-note { margin: 0; flex: 1 1 320px; max-width: 70ch; align-self: center; }
+.post-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin: 0; padding: 14px; background: var(--subtle); border: 1px solid var(--line); border-radius: 8px; }
+.post-summary dt { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.post-summary dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.post-review { margin: 0 0 8px; white-space: pre-wrap; max-height: 160px; overflow-y: auto; }
 
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
@@ -220,6 +233,7 @@ input[readonly] { opacity: 0.7; }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid { grid-template-columns: 1fr; }
   .span-2 { grid-column: auto; }
+  .post-summary { grid-template-columns: 1fr; }
   .actions { width: 100%; }
   .actions .btn { flex: 1 1 auto; }
 }

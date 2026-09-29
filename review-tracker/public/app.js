@@ -23,6 +23,9 @@ const state = {
   coSort: { key: 'startDate', dir: -1 },
   editingCompanyId: null,
   editingViewer: null,
+  posters: [],
+  editingPosterId: null,
+  postingId: null,
 };
 
 // ---------- api ----------
@@ -56,12 +59,19 @@ function showLogin() {
 async function showApp(user) {
   state.user = user;
   document.body.classList.toggle('is-admin', user.role === 'admin');
-  $('#who').textContent = user.role === 'admin' ? `${user.username} · Admin` : `${user.username} · ${user.companies?.join(', ') || 'View only'}`;
+  document.body.classList.toggle('is-poster', user.role === 'poster');
+  $('#who').textContent =
+    user.role === 'admin' ? `${user.username} · Admin`
+    : user.role === 'poster' ? `${user.name} · Poster`
+    : `${user.username} · ${user.companies?.join(', ') || 'View only'}`;
   $('#login-view').hidden = true;
   $('#app-view').hidden = false;
   showTab('reviews');
-  if (user.role === 'admin') await loadCompanies();
-  else state.companies = [];
+  if (user.role === 'admin') await Promise.all([loadCompanies(), loadPosters()]);
+  else {
+    state.companies = [];
+    state.posters = [];
+  }
   await loadRecords();
 }
 
@@ -75,8 +85,12 @@ async function loadRecords() {
   fillSelect($('#filter-client'), clients, 'All clients');
   const names = [...new Set([...clients, ...state.companies.map((c) => c.name)])].sort((a, b) => a.localeCompare(b));
   $('#client-options').replaceChildren(...names.map((c) => new Option(c)));
+  $('#poster-options').replaceChildren(...state.posters.map((p) => new Option(p.name)));
   render();
-  if (state.user?.role === 'admin') renderCompanies();
+  if (state.user?.role === 'admin') {
+    renderCompanies();
+    renderPosters();
+  }
 }
 
 function fillSelect(select, values, allLabel) {
@@ -109,6 +123,7 @@ function filteredRecords() {
 function render() {
   const rows = filteredRecords();
   const isAdmin = state.user?.role === 'admin';
+  const isPoster = state.user?.role === 'poster';
   const tbody = $('#records tbody');
 
   tbody.replaceChildren(
@@ -123,9 +138,10 @@ function render() {
         cell(r.posterName),
         linkCell(r.reviewLink),
         statusCell(r.status),
-        paidCell(r.paid),
       );
+      if (!isPoster) tr.append(paidCell(r.paid));
       if (isAdmin) tr.append(actionsCell(r));
+      if (isPoster) tr.append(posterActionCell(r));
       return tr;
     }),
   );
@@ -137,7 +153,9 @@ function render() {
     : isAdmin
       ? 'No records yet. Use “+ Add record” or “Import CSV” to get started.'
       : state.user?.companies?.length === 0
-        ? 'No company is linked to this login yet. Ask your account manager to set it up.'
+        ? isPoster
+          ? 'No companies are assigned to you yet. Ask your manager to set it up.'
+          : 'No company is linked to this login yet. Ask your account manager to set it up.'
         : 'No records yet.';
 
   document.querySelectorAll('th[data-sort]').forEach((th) => {
@@ -216,6 +234,17 @@ function actionsCell(r) {
   del.textContent = 'Delete';
   del.addEventListener('click', () => deleteRecord(r));
   td.append(edit, del);
+  return td;
+}
+
+function posterActionCell(r) {
+  const td = document.createElement('td');
+  td.className = 'row-actions';
+  const btn = document.createElement('button');
+  btn.className = 'btn small';
+  btn.textContent = 'Update';
+  btn.addEventListener('click', () => openPostDialog(r));
+  td.append(btn);
   return td;
 }
 
@@ -515,6 +544,7 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach((t) => t.dataset.tab === name ? t.setAttribute('aria-current', 'page') : t.removeAttribute('aria-current'));
   $('#reviews-panel').hidden = name !== 'reviews';
   $('#companies-panel').hidden = name !== 'companies';
+  $('#posters-panel').hidden = name !== 'posters';
 }
 
 async function loadCompanies() {
@@ -641,6 +671,169 @@ async function deleteCompany(c) {
   }
 }
 
+// ---------- posters: admin management ----------
+
+async function loadPosters() {
+  const { posters } = await api('/api/posters');
+  state.posters = posters;
+}
+
+function renderPosters() {
+  const companyName = new Map(state.companies.map((c) => [c.id, c.name]));
+  const rows = [...state.posters].sort((a, b) => a.name.localeCompare(b.name));
+  $('#posters tbody').replaceChildren(
+    ...rows.map((p) => {
+      const tr = document.createElement('tr');
+      const names = p.companyIds.map((id) => companyName.get(id)).filter(Boolean);
+      const companies = cell(names.length ? names.join(', ') : 'No companies assigned', names.length ? '' : 'warn');
+      const posted = state.records.filter((r) => sameName(r.posterName, p.name) && (r.status === 'Posted' || r.status === 'Live')).length;
+      const edit = document.createElement('button');
+      edit.className = 'btn small';
+      edit.textContent = 'Edit';
+      edit.addEventListener('click', () => openPosterDialog(p));
+      const del = document.createElement('button');
+      del.className = 'btn small danger';
+      del.textContent = 'Delete';
+      del.addEventListener('click', () => deletePoster(p));
+      const actions = document.createElement('td');
+      actions.className = 'row-actions';
+      actions.append(edit, del);
+      tr.append(cell(p.name, 'strong'), cell(p.username), companies, cell(String(posted), 'num'), actions);
+      return tr;
+    }),
+  );
+  const empty = $('#posters-empty');
+  empty.hidden = rows.length > 0;
+  empty.textContent = 'No posters yet. Use “+ Add poster” to create a login for someone who posts reviews.';
+}
+
+function renderPosterCompanyPicks(checkedIds = []) {
+  const box = $('#poster-companies');
+  if (!state.companies.length) {
+    const p = document.createElement('p');
+    p.className = 'muted';
+    p.textContent = 'Add a company in the Companies tab first.';
+    box.replaceChildren(p);
+    return;
+  }
+  const checked = new Set(checkedIds);
+  box.replaceChildren(
+    ...[...state.companies]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((c) => {
+        const label = document.createElement('label');
+        label.className = 'check';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.name = 'companyIds';
+        input.value = c.id;
+        input.checked = checked.has(c.id);
+        label.append(input, ` ${c.name}`);
+        return label;
+      }),
+  );
+}
+
+function openPosterDialog(poster) {
+  const form = $('#poster-form');
+  form.reset();
+  showError($('#poster-error'), '');
+  state.editingPosterId = poster?.id ?? null;
+  $('#poster-title').textContent = poster ? `Edit ${poster.name}` : 'Add poster';
+  $('#poster-username').readOnly = Boolean(poster);
+  $('#poster-password').required = !poster;
+  $('#poster-password').placeholder = poster ? 'Leave blank to keep current' : '';
+  if (poster) {
+    $('#poster-name').value = poster.name;
+    $('#poster-username').value = poster.username;
+  }
+  renderPosterCompanyPicks(poster?.companyIds);
+  $('#poster-dialog').showModal();
+}
+
+async function savePoster(e) {
+  e.preventDefault();
+  const form = e.target;
+  const body = {
+    name: form.elements.name.value,
+    username: form.elements.username.value,
+    password: form.elements.password.value,
+    companyIds: [...form.querySelectorAll('input[name=companyIds]:checked')].map((i) => i.value),
+  };
+  try {
+    if (state.editingPosterId) await api(`/api/posters/${state.editingPosterId}`, { method: 'PUT', body });
+    else await api('/api/posters', { method: 'POST', body });
+    $('#poster-dialog').close();
+    toast(state.editingPosterId ? 'Poster updated' : `Poster login ${body.username} created`);
+    await loadPosters();
+    await loadRecords();
+  } catch (err) {
+    showError($('#poster-error'), err.message);
+  }
+}
+
+async function deletePoster(p) {
+  if (!(await confirmAction(`Delete poster ${p.name}? Their login stops working. Reviews they posted stay.`, 'Delete'))) return;
+  try {
+    await api(`/api/posters/${p.id}`, { method: 'DELETE' });
+    toast('Poster deleted');
+    await loadPosters();
+    await loadRecords();
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+// ---------- posters: updating a review ----------
+
+function openPostDialog(r) {
+  const form = $('#post-form');
+  form.reset();
+  showError($('#post-error'), '');
+  state.postingId = r.id;
+  $('#post-client').textContent = r.client || '—';
+  $('#post-listing').textContent = r.listing || '—';
+  $('#post-review').textContent = r.review || 'No review text.';
+  $('#post-copy').hidden = !r.review;
+  fillSelect($('#post-status'), state.statuses);
+  $('#post-status').value = r.status;
+  $('#post-poster').value = r.posterName || state.user?.name || '';
+  $('#post-link').value = r.reviewLink || '';
+  $('#post-dialog').showModal();
+}
+
+async function savePost(e) {
+  e.preventDefault();
+  const form = e.target;
+  const body = {
+    posterName: form.elements.posterName.value,
+    reviewLink: form.elements.reviewLink.value,
+    status: form.elements.status.value,
+  };
+  try {
+    await api(`/api/records/${state.postingId}`, { method: 'PATCH', body });
+    $('#post-dialog').close();
+    toast('Review updated');
+    await loadRecords();
+  } catch (err) {
+    showError($('#post-error'), err.message);
+  }
+}
+
+async function copyReview() {
+  const text = $('#post-review').textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Review text copied');
+  } catch {
+    const range = document.createRange();
+    range.selectNodeContents($('#post-review'));
+    getSelection().removeAllRanges();
+    getSelection().addRange(range);
+    toast('Text selected. Press Ctrl+C (or ⌘C) to copy.');
+  }
+}
+
 // ---------- wiring ----------
 
 $('#login-form').addEventListener('submit', async (e) => {
@@ -682,6 +875,10 @@ document.querySelectorAll('th[data-sort]').forEach((th) =>
 $('#add-btn').addEventListener('click', () => openRecordDialog(null));
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
 $('#add-company-btn').addEventListener('click', () => openCompanyDialog(null));
+$('#add-poster-btn').addEventListener('click', () => openPosterDialog(null));
+$('#poster-form').addEventListener('submit', savePoster);
+$('#post-form').addEventListener('submit', savePost);
+$('#post-copy').addEventListener('click', copyReview);
 $('#company-form').addEventListener('submit', saveCompany);
 $('#co-search').addEventListener('input', renderCompanies);
 document.querySelectorAll('th[data-co-sort]').forEach((th) =>

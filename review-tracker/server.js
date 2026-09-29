@@ -1,6 +1,7 @@
 // Review Tracker: a small zero-dependency Node server.
-// Admin can add, edit, delete and import review records and manage viewer logins.
-// Viewers can only read the records of the companies assigned to them.
+// Admin can add, edit, delete and import review records and manage companies, posters and viewer logins.
+// Posters can update the posting fields (poster name, review link, status) of their companies' records.
+// Viewers can only read the records of the company assigned to them.
 
 import http from 'node:http';
 import fs from 'node:fs';
@@ -31,6 +32,7 @@ function loadDb() {
     db.records ??= [];
     db.viewers ??= [];
     db.companies ??= [];
+    db.posters ??= [];
     // Older data allowed several companies per viewer; each viewer now has exactly one.
     for (const v of db.viewers) {
       if (!('companyId' in v)) v.companyId = v.companyIds?.[0] ?? '';
@@ -39,7 +41,7 @@ function loadDb() {
     return db;
   } catch (err) {
     if (err.code !== 'ENOENT') throw err;
-    return { records: [], viewers: [], companies: [] };
+    return { records: [], viewers: [], companies: [], posters: [] };
   }
 }
 
@@ -71,11 +73,32 @@ function checkCredentials(username, password) {
   if (safeEqual(username, ADMIN_USER) && safeEqual(password, ADMIN_PASS)) {
     return { username: ADMIN_USER, role: 'admin' };
   }
-  const viewer = db.viewers.find((v) => v.username.toLowerCase() === String(username).toLowerCase());
+  const viewer = findByUsername(db.viewers, username);
   if (viewer && safeEqual(hashPassword(String(password), viewer.salt).hash, viewer.hash)) {
     return { username: viewer.username, role: 'viewer' };
   }
+  const poster = findByUsername(db.posters, username);
+  if (poster && safeEqual(hashPassword(String(password), poster.salt).hash, poster.hash)) {
+    return { username: poster.username, role: 'poster' };
+  }
   return null;
+}
+
+function findByUsername(list, username) {
+  return list.find((u) => u.username.toLowerCase() === String(username).toLowerCase());
+}
+
+// Usernames are shared across the admin, viewers and posters so a login always means one account.
+function usernameTaken(username, ownList) {
+  if (username.toLowerCase() === ADMIN_USER.toLowerCase()) return true;
+  return [db.viewers, db.posters].some((list) => list !== ownList && findByUsername(list, username));
+}
+
+const USERNAME_RE = /^[\w.@-]{3,40}$/;
+const USERNAME_ERROR = 'Username must be 3 to 40 letters, numbers, dots, dashes or underscores.';
+
+function endSessions(username) {
+  for (const [t, s] of sessions) if (s.username === username && s.role !== 'admin') sessions.delete(t);
 }
 
 // Basic brute-force protection: 10 failed attempts per IP per 15 minutes.
@@ -165,6 +188,28 @@ function viewerCompanies(username) {
   return company ? [company.name] : [];
 }
 
+// Company names a poster may work on.
+function posterCompanies(username) {
+  const ids = new Set(db.posters.find((p) => p.username === username)?.companyIds ?? []);
+  return db.companies.filter((c) => ids.has(c.id)).map((c) => c.name);
+}
+
+function sessionCompanies(session) {
+  return session.role === 'poster' ? posterCompanies(session.username) : viewerCompanies(session.username);
+}
+
+function me(session) {
+  const out = { username: session.username, role: session.role };
+  if (session.role === 'poster') out.name = db.posters.find((p) => p.username === session.username)?.name || session.username;
+  if (session.role !== 'admin') out.companies = sessionCompanies(session);
+  return out;
+}
+
+function cleanCompanyIds(ids) {
+  const known = new Set(db.companies.map((c) => c.id));
+  return [...new Set(Array.isArray(ids) ? ids.map(String) : [])].filter((id) => known.has(id));
+}
+
 function cleanCompanyId(id) {
   return db.companies.some((c) => c.id === String(id ?? '')) ? String(id) : '';
 }
@@ -250,8 +295,7 @@ async function handleApi(req, res, pathname) {
     failedLogins.delete(ip);
     const token = crypto.randomBytes(32).toString('hex');
     sessions.set(token, { ...user, expires: Date.now() + SESSION_TTL_MS });
-    const me = user.role === 'viewer' ? { ...user, companies: viewerCompanies(user.username) } : user;
-    return send(res, 200, me, { 'Set-Cookie': sessionCookie(req, token, SESSION_TTL_MS / 1000) });
+    return send(res, 200, me(user), { 'Set-Cookie': sessionCookie(req, token, SESSION_TTL_MS / 1000) });
   }
 
   const session = getSession(req);
@@ -265,19 +309,33 @@ async function handleApi(req, res, pathname) {
   const isAdmin = session.role === 'admin';
 
   if (pathname === '/api/me' && method === 'GET') {
-    const me = { username: session.username, role: session.role };
-    if (!isAdmin) me.companies = viewerCompanies(session.username);
-    return send(res, 200, me);
+    return send(res, 200, me(session));
   }
 
   if (pathname === '/api/records' && method === 'GET') {
     if (isAdmin) return send(res, 200, { records: db.records, statuses: STATUSES });
-    const names = viewerCompanies(session.username);
-    const records = db.records.filter((r) => names.some((n) => sameName(n, r.client)));
+    const names = sessionCompanies(session);
+    let records = db.records.filter((r) => names.some((n) => sameName(n, r.client)));
+    // Payment status is between the admin and the client; posters don't see it.
+    if (session.role === 'poster') records = records.map(({ paid, ...r }) => r);
     return send(res, 200, { records, statuses: STATUSES });
   }
 
-  if (!isAdmin) return send(res, 403, { error: 'View-only account.' });
+  // Posters update only the posting fields, and only on their companies' records.
+  const patchMatch = pathname.match(/^\/api\/records\/([\w-]+)$/);
+  if (patchMatch && method === 'PATCH' && session.role === 'poster') {
+    const record = db.records.find((r) => r.id === patchMatch[1]);
+    const names = posterCompanies(session.username);
+    if (!record || !names.some((n) => sameName(n, record.client))) return send(res, 404, { error: 'Record not found.' });
+    const body = await readJson(req);
+    const next = cleanRecord({ ...record, posterName: body.posterName, reviewLink: body.reviewLink, status: body.status });
+    Object.assign(record, { posterName: next.posterName, reviewLink: next.reviewLink, status: next.status, updatedAt: new Date().toISOString() });
+    saveDb();
+    const { paid, ...visible } = record;
+    return send(res, 200, visible);
+  }
+
+  if (!isAdmin) return send(res, 403, { error: 'Your login can’t do that.' });
 
   if (pathname === '/api/records' && method === 'POST') {
     const body = await readJson(req);
@@ -348,6 +406,7 @@ async function handleApi(req, res, pathname) {
     if (method === 'DELETE') {
       const [removed] = db.companies.splice(idx, 1);
       for (const v of db.viewers) if (v.companyId === removed.id) v.companyId = '';
+      for (const p of db.posters) p.companyIds = (p.companyIds ?? []).filter((id) => id !== removed.id);
       saveDb();
       return send(res, 200, { ok: true });
     }
@@ -363,10 +422,8 @@ async function handleApi(req, res, pathname) {
     const body = await readJson(req);
     const username = String(body.username ?? '').trim();
     const password = String(body.password ?? '');
-    if (!/^[\w.@-]{3,40}$/.test(username)) {
-      return send(res, 400, { error: 'Username must be 3 to 40 letters, numbers, dots, dashes or underscores.' });
-    }
-    if (username.toLowerCase() === ADMIN_USER.toLowerCase()) return send(res, 400, { error: 'That username is taken.' });
+    if (!USERNAME_RE.test(username)) return send(res, 400, { error: USERNAME_ERROR });
+    if (usernameTaken(username, db.viewers)) return send(res, 400, { error: 'That username is taken.' });
     const existing = db.viewers.find((v) => v.username.toLowerCase() === username.toLowerCase());
     // A blank password on an existing login keeps its current password.
     if ((!existing || password) && password.length < 5) {
@@ -379,7 +436,7 @@ async function handleApi(req, res, pathname) {
       if (password) {
         Object.assign(existing, hashPassword(password));
         // Changing a password signs that viewer out everywhere.
-        for (const [t, s] of sessions) if (s.username === existing.username) sessions.delete(t);
+        endSessions(existing.username);
       }
     } else {
       db.viewers.push({ username, ...hashPassword(password), companyId, createdAt: new Date().toISOString() });
@@ -394,7 +451,57 @@ async function handleApi(req, res, pathname) {
     const before = db.viewers.length;
     db.viewers = db.viewers.filter((v) => v.username !== name);
     if (db.viewers.length === before) return send(res, 404, { error: 'Viewer not found.' });
-    for (const [t, s] of sessions) if (s.username === name && s.role === 'viewer') sessions.delete(t);
+    endSessions(name);
+    saveDb();
+    return send(res, 200, { ok: true });
+  }
+
+  if (pathname === '/api/posters' && method === 'GET') {
+    return send(res, 200, {
+      posters: db.posters.map(({ id, name, username, companyIds, createdAt }) => ({
+        id, name, username, companyIds: cleanCompanyIds(companyIds), createdAt,
+      })),
+    });
+  }
+
+  const posterMatch = pathname.match(/^\/api\/posters(?:\/([\w-]+))?$/);
+  if (posterMatch && (method === 'POST' || method === 'PUT')) {
+    const body = await readJson(req);
+    const existing = posterMatch[1] ? db.posters.find((p) => p.id === posterMatch[1]) : null;
+    if (method === 'PUT' && !existing) return send(res, 404, { error: 'Poster not found.' });
+    if (method === 'POST' && posterMatch[1]) return send(res, 404, { error: 'Not found.' });
+    const name = String(body.name ?? '').trim().slice(0, 100);
+    const password = String(body.password ?? '');
+    const companyIds = cleanCompanyIds(body.companyIds);
+    if (!name) return send(res, 400, { error: 'Poster name is required.' });
+    if (!existing) {
+      const username = String(body.username ?? '').trim();
+      if (!USERNAME_RE.test(username)) return send(res, 400, { error: USERNAME_ERROR });
+      if (usernameTaken(username, null) || findByUsername(db.posters, username)) {
+        return send(res, 400, { error: 'That username is taken.' });
+      }
+      if (password.length < 5) return send(res, 400, { error: 'Password must be at least 5 characters.' });
+      const poster = { id: crypto.randomUUID(), name, username, ...hashPassword(password), companyIds, createdAt: new Date().toISOString() };
+      db.posters.push(poster);
+      saveDb();
+      return send(res, 201, { id: poster.id, username });
+    }
+    // A blank password keeps the current one.
+    if (password && password.length < 5) return send(res, 400, { error: 'Password must be at least 5 characters.' });
+    Object.assign(existing, { name, companyIds });
+    if (password) {
+      Object.assign(existing, hashPassword(password));
+      endSessions(existing.username);
+    }
+    saveDb();
+    return send(res, 200, { id: existing.id, username: existing.username });
+  }
+
+  if (posterMatch?.[1] && method === 'DELETE') {
+    const idx = db.posters.findIndex((p) => p.id === posterMatch[1]);
+    if (idx === -1) return send(res, 404, { error: 'Poster not found.' });
+    const [removed] = db.posters.splice(idx, 1);
+    endSessions(removed.username);
     saveDb();
     return send(res, 200, { ok: true });
   }
