@@ -197,8 +197,17 @@ dialog h2 { margin: 0; font-size: 20px; }
   padding: 8px 12px; border-bottom: 1px solid var(--line);
 }
 .viewer-list li:last-child { border-bottom: 0; }
-.viewer-form { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; }
-.viewer-form input { flex: 1 1 160px; width: auto; }
+.viewer-info { display: grid; gap: 2px; min-width: 0; }
+.viewer-info span { font-size: 13px; }
+.warn { color: var(--pending-ink); }
+.viewer-form { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--subtle); }
+.viewer-form h3 { margin: 0; font-size: 16px; }
+.company-picks { margin: 0; padding: 0; border: 0; display: grid; gap: 8px; }
+.company-picks legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+#viewer-companies { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 12px; max-height: 180px; overflow-y: auto; }
+#viewer-companies label.check { font-size: 14px; font-weight: 400; }
+#viewer-companies p { margin: 0; }
+input[readonly] { opacity: 0.7; }
 
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);

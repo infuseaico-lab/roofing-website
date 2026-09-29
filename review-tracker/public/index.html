@@ -191,15 +191,25 @@
   <dialog id="viewers-dialog">
     <div class="dialog-body">
       <h2>Viewer logins</h2>
-      <p class="muted">Viewers can see every record but cannot add, edit or delete anything.
-        Send the username and password to your client. Entering an existing username resets its password.</p>
+      <p class="muted">A viewer sees only the records of the companies you assign to them, and cannot change anything.
+        Send the username and password to your client.</p>
       <ul id="viewer-list" class="viewer-list"></ul>
       <form id="viewer-form" class="viewer-form">
-        <input name="username" placeholder="Username" required autocomplete="off">
-        <input name="password" placeholder="Password" required autocomplete="new-password" minlength="5">
-        <button class="btn primary" type="submit">Save login</button>
+        <h3 id="viewer-form-title">New viewer login</h3>
+        <div class="grid">
+          <label>Username <input id="viewer-username" name="username" required autocomplete="off"></label>
+          <label>Password <input id="viewer-password" name="password" required autocomplete="new-password" minlength="5"></label>
+        </div>
+        <fieldset class="company-picks">
+          <legend>Companies this login can see</legend>
+          <div id="viewer-companies"></div>
+        </fieldset>
+        <p class="error" id="viewer-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="btn ghost" id="viewer-cancel-edit" hidden>Cancel edit</button>
+          <button class="btn primary" type="submit" id="viewer-submit">Create login</button>
+        </div>
       </form>
-      <p class="error" id="viewer-error" role="alert" hidden></p>
       <div class="dialog-actions">
         <button type="button" class="btn ghost" data-close>Done</button>
       </div>

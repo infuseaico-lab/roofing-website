@@ -1,6 +1,6 @@
 // Review Tracker: a small zero-dependency Node server.
 // Admin can add, edit, delete and import review records and manage viewer logins.
-// Viewers can only read records.
+// Viewers can only read the records of the companies assigned to them.
 
 import http from 'node:http';
 import fs from 'node:fs';
@@ -150,6 +150,20 @@ function cleanCompany(input) {
   };
 }
 
+const sameName = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
+
+// Company names a viewer may see, read fresh on every request so assignment changes apply at once.
+function viewerCompanies(username) {
+  const viewer = db.viewers.find((v) => v.username === username);
+  const ids = new Set(viewer?.companyIds ?? []);
+  return db.companies.filter((c) => ids.has(c.id)).map((c) => c.name);
+}
+
+function cleanCompanyIds(ids) {
+  const known = new Set(db.companies.map((c) => c.id));
+  return [...new Set(Array.isArray(ids) ? ids.map(String) : [])].filter((id) => known.has(id));
+}
+
 // ---------- http helpers ----------
 
 function send(res, status, body, headers = {}) {
@@ -231,7 +245,8 @@ async function handleApi(req, res, pathname) {
     failedLogins.delete(ip);
     const token = crypto.randomBytes(32).toString('hex');
     sessions.set(token, { ...user, expires: Date.now() + SESSION_TTL_MS });
-    return send(res, 200, user, { 'Set-Cookie': sessionCookie(req, token, SESSION_TTL_MS / 1000) });
+    const me = user.role === 'viewer' ? { ...user, companies: viewerCompanies(user.username) } : user;
+    return send(res, 200, me, { 'Set-Cookie': sessionCookie(req, token, SESSION_TTL_MS / 1000) });
   }
 
   const session = getSession(req);
@@ -245,11 +260,16 @@ async function handleApi(req, res, pathname) {
   const isAdmin = session.role === 'admin';
 
   if (pathname === '/api/me' && method === 'GET') {
-    return send(res, 200, { username: session.username, role: session.role });
+    const me = { username: session.username, role: session.role };
+    if (!isAdmin) me.companies = viewerCompanies(session.username);
+    return send(res, 200, me);
   }
 
   if (pathname === '/api/records' && method === 'GET') {
-    return send(res, 200, { records: db.records, statuses: STATUSES });
+    if (isAdmin) return send(res, 200, { records: db.records, statuses: STATUSES });
+    const names = viewerCompanies(session.username);
+    const records = db.records.filter((r) => names.some((n) => sameName(n, r.client)));
+    return send(res, 200, { records, statuses: STATUSES });
   }
 
   if (!isAdmin) return send(res, 403, { error: 'View-only account.' });
@@ -311,19 +331,27 @@ async function handleApi(req, res, pathname) {
     if (method === 'PUT') {
       const company = cleanCompany(await readJson(req));
       if (!company.name) return send(res, 400, { error: 'Company name is required.' });
+      // Keep existing records attached to the company when it is renamed.
+      const oldName = db.companies[idx].name;
+      if (!sameName(oldName, company.name)) {
+        for (const r of db.records) if (sameName(r.client, oldName)) r.client = company.name;
+      }
       db.companies[idx] = { ...db.companies[idx], ...company, updatedAt: new Date().toISOString() };
       saveDb();
       return send(res, 200, db.companies[idx]);
     }
     if (method === 'DELETE') {
-      db.companies.splice(idx, 1);
+      const [removed] = db.companies.splice(idx, 1);
+      for (const v of db.viewers) v.companyIds = (v.companyIds ?? []).filter((id) => id !== removed.id);
       saveDb();
       return send(res, 200, { ok: true });
     }
   }
 
   if (pathname === '/api/viewers' && method === 'GET') {
-    return send(res, 200, { viewers: db.viewers.map((v) => ({ username: v.username, createdAt: v.createdAt })) });
+    return send(res, 200, {
+      viewers: db.viewers.map((v) => ({ username: v.username, companyIds: cleanCompanyIds(v.companyIds), createdAt: v.createdAt })),
+    });
   }
 
   if (pathname === '/api/viewers' && method === 'POST') {
@@ -333,19 +361,25 @@ async function handleApi(req, res, pathname) {
     if (!/^[\w.@-]{3,40}$/.test(username)) {
       return send(res, 400, { error: 'Username must be 3 to 40 letters, numbers, dots, dashes or underscores.' });
     }
-    if (password.length < 5) return send(res, 400, { error: 'Password must be at least 5 characters.' });
     if (username.toLowerCase() === ADMIN_USER.toLowerCase()) return send(res, 400, { error: 'That username is taken.' });
     const existing = db.viewers.find((v) => v.username.toLowerCase() === username.toLowerCase());
-    const { salt, hash } = hashPassword(password);
+    // A blank password on an existing login keeps its current password.
+    if ((!existing || password) && password.length < 5) {
+      return send(res, 400, { error: 'Password must be at least 5 characters.' });
+    }
+    const companyIds = cleanCompanyIds(body.companyIds);
     if (existing) {
-      Object.assign(existing, { salt, hash });
-      // Changing a password signs that viewer out everywhere.
-      for (const [t, s] of sessions) if (s.username === existing.username) sessions.delete(t);
+      existing.companyIds = companyIds;
+      if (password) {
+        Object.assign(existing, hashPassword(password));
+        // Changing a password signs that viewer out everywhere.
+        for (const [t, s] of sessions) if (s.username === existing.username) sessions.delete(t);
+      }
     } else {
-      db.viewers.push({ username, salt, hash, createdAt: new Date().toISOString() });
+      db.viewers.push({ username, ...hashPassword(password), companyIds, createdAt: new Date().toISOString() });
     }
     saveDb();
-    return send(res, existing ? 200 : 201, { username, updated: Boolean(existing) });
+    return send(res, existing ? 200 : 201, { username: existing?.username ?? username, updated: Boolean(existing) });
   }
 
   const viewerMatch = pathname.match(/^\/api\/viewers\/([^/]+)$/);

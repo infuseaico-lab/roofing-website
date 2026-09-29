@@ -22,6 +22,7 @@ const state = {
   companies: [],
   coSort: { key: 'startDate', dir: -1 },
   editingCompanyId: null,
+  editingViewer: null,
 };
 
 // ---------- api ----------
@@ -55,7 +56,7 @@ function showLogin() {
 async function showApp(user) {
   state.user = user;
   document.body.classList.toggle('is-admin', user.role === 'admin');
-  $('#who').textContent = `${user.username} · ${user.role === 'admin' ? 'Admin' : 'View only'}`;
+  $('#who').textContent = user.role === 'admin' ? `${user.username} · Admin` : `${user.username} · ${user.companies?.join(', ') || 'View only'}`;
   $('#login-view').hidden = true;
   $('#app-view').hidden = false;
   showTab('reviews');
@@ -135,7 +136,9 @@ function render() {
     ? 'No records match these filters.'
     : isAdmin
       ? 'No records yet. Use “+ Add record” or “Import CSV” to get started.'
-      : 'No records yet.';
+      : state.user?.companies?.length === 0
+        ? 'No company is linked to this login yet. Ask your account manager to set it up.'
+        : 'No records yet.';
 
   document.querySelectorAll('th[data-sort]').forEach((th) => {
     th.setAttribute('aria-sort', th.dataset.sort === state.sort.key ? (state.sort.dir === 1 ? 'ascending' : 'descending') : 'none');
@@ -413,11 +416,23 @@ async function loadViewers() {
     list.replaceChildren(li);
     return;
   }
+  const companyName = new Map(state.companies.map((c) => [c.id, c.name]));
   list.replaceChildren(
     ...viewers.map((v) => {
       const li = document.createElement('li');
-      const name = document.createElement('span');
+      const info = document.createElement('div');
+      info.className = 'viewer-info';
+      const name = document.createElement('strong');
       name.textContent = v.username;
+      const sees = document.createElement('span');
+      const names = v.companyIds.map((id) => companyName.get(id)).filter(Boolean);
+      sees.className = names.length ? 'muted' : 'warn';
+      sees.textContent = names.length ? `Sees: ${names.join(', ')}` : 'No company assigned. This login sees no records.';
+      info.append(name, sees);
+      const edit = document.createElement('button');
+      edit.className = 'btn small';
+      edit.textContent = 'Edit';
+      edit.addEventListener('click', () => editViewer(v));
       const del = document.createElement('button');
       del.className = 'btn small danger';
       del.textContent = 'Remove';
@@ -425,28 +440,89 @@ async function loadViewers() {
         if (!(await confirmAction(`Remove viewer login "${v.username}"? They will be signed out.`, 'Remove'))) return;
         try {
           await api(`/api/viewers/${encodeURIComponent(v.username)}`, { method: 'DELETE' });
+          if ($('#viewer-username').value === v.username) resetViewerForm();
           await loadViewers();
         } catch (err) {
           showError($('#viewer-error'), err.message);
         }
       });
-      li.append(name, del);
+      const actions = document.createElement('div');
+      actions.className = 'row-actions';
+      actions.append(edit, del);
+      li.append(info, actions);
       return li;
     }),
   );
+}
+
+function renderCompanyPicks(checkedIds = []) {
+  const box = $('#viewer-companies');
+  if (!state.companies.length) {
+    const p = document.createElement('p');
+    p.className = 'muted';
+    p.textContent = 'Add a company in the Companies tab first.';
+    box.replaceChildren(p);
+    return;
+  }
+  const checked = new Set(checkedIds);
+  box.replaceChildren(
+    ...[...state.companies]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((c) => {
+        const label = document.createElement('label');
+        label.className = 'check';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.name = 'companyIds';
+        input.value = c.id;
+        input.checked = checked.has(c.id);
+        label.append(input, ` ${c.name}`);
+        return label;
+      }),
+  );
+}
+
+function resetViewerForm() {
+  const form = $('#viewer-form');
+  form.reset();
+  state.editingViewer = null;
+  $('#viewer-username').readOnly = false;
+  $('#viewer-password').required = true;
+  $('#viewer-password').placeholder = '';
+  $('#viewer-form-title').textContent = 'New viewer login';
+  $('#viewer-submit').textContent = 'Create login';
+  $('#viewer-cancel-edit').hidden = true;
+  renderCompanyPicks();
+}
+
+function editViewer(v) {
+  resetViewerForm();
+  state.editingViewer = v.username;
+  $('#viewer-username').value = v.username;
+  $('#viewer-username').readOnly = true;
+  $('#viewer-password').required = false;
+  $('#viewer-password').placeholder = 'Leave blank to keep current';
+  $('#viewer-form-title').textContent = `Edit ${v.username}`;
+  $('#viewer-submit').textContent = 'Save changes';
+  $('#viewer-cancel-edit').hidden = false;
+  renderCompanyPicks(v.companyIds);
+  $('#viewer-password').focus();
 }
 
 async function saveViewer(e) {
   e.preventDefault();
   const form = e.target;
   showError($('#viewer-error'), '');
+  const companyIds = [...form.querySelectorAll('input[name=companyIds]:checked')].map((i) => i.value);
+  if (!companyIds.length && !(await confirmAction('No company is selected, so this login will see no records. Save anyway?', 'Save'))) return;
   try {
+    const password = form.elements.password.value;
     const { username, updated } = await api('/api/viewers', {
       method: 'POST',
-      body: { username: form.elements.username.value, password: form.elements.password.value },
+      body: { username: form.elements.username.value, password, companyIds },
     });
-    form.reset();
-    toast(updated ? `Password reset for ${username}` : `Viewer login ${username} created`);
+    resetViewerForm();
+    toast(updated ? (password ? `Saved ${username}; password changed` : `Saved ${username}`) : `Viewer login ${username} created`);
     await loadViewers();
   } catch (err) {
     showError($('#viewer-error'), err.message);
@@ -654,10 +730,12 @@ $('#import-form').addEventListener('submit', runImport);
 
 $('#viewers-btn').addEventListener('click', async () => {
   showError($('#viewer-error'), '');
+  resetViewerForm();
   $('#viewers-dialog').showModal();
   await loadViewers().catch((err) => showError($('#viewer-error'), err.message));
 });
 $('#viewer-form').addEventListener('submit', saveViewer);
+$('#viewer-cancel-edit').addEventListener('click', resetViewerForm);
 
 document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
 

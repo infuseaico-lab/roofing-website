@@ -10,7 +10,7 @@ npm start          # http://localhost:3000
 ## Logins
 
 - **Admin** (full access): `edygal` / `55555`. To change it, set the `ADMIN_USER` and `ADMIN_PASS` environment variables.
-- **Viewers** (read-only): after signing in as admin, click **Viewer logins** and create a username and password for each client. Viewers can search, filter and export records to CSV, but they cannot add, edit or delete anything. The server enforces this, so it is not just hidden buttons. Entering an existing username resets that viewer's password. Removing a viewer signs them out right away.
+- **Viewers** (read-only): after signing in as admin, click **Viewer logins**, create a username and password, and tick the companies that login may see. A viewer sees only records whose **Client** matches one of their assigned companies; a login with no company sees nothing. The server does this filtering, so other clients' records never reach their browser. Viewers can search, filter and export their own records but cannot change anything. Use **Edit** to change a login's companies or password (leave the password blank to keep it). Renaming a company renames its records too, so viewers keep access. Removing a viewer signs them out right away.
 
 ## Records
 
