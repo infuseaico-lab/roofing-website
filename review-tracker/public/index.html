@@ -47,7 +47,6 @@
         <div class="stat"><span class="stat-num" id="stat-total">0</span><span class="stat-label">Total reviews</span></div>
         <div class="stat"><span class="stat-num" id="stat-live">0</span><span class="stat-label">Live</span></div>
         <div class="stat"><span class="stat-num" id="stat-pending">0</span><span class="stat-label">Pending / posted</span></div>
-        <div class="stat editor-only"><span class="stat-num" id="stat-warranty">0</span><span class="stat-label">Under warranty</span></div>
         <div class="stat admin-only"><span class="stat-num" id="stat-unpaid">0</span><span class="stat-label">Posters unpaid</span></div>
       </section>
 
@@ -97,9 +96,8 @@
               <th data-sort="posterName">Poster name</th>
               <th>Review link</th>
               <th data-sort="status">Status</th>
-              <th data-sort="_warrantyEnd" class="editor-only">Warranty</th>
               <th data-sort="paid" class="admin-only">Poster paid</th>
-              <th class="editor-only"><span class="sr-only">Actions</span></th>
+              <th class="editor-only actions-col"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -255,6 +253,7 @@
       </div>
       <datalist id="client-options"></datalist>
       <datalist id="poster-options"></datalist>
+      <p class="warranty-note" id="record-warranty" hidden></p>
       <p class="error" id="record-error" role="alert" hidden></p>
       <div class="dialog-actions">
         <button type="button" class="btn ghost" data-close>Cancel</button>

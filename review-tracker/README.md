@@ -22,7 +22,7 @@ Each record has: Client, Listing, Pace, Review, Image URL (a link to the photos 
 - **Export CSV** downloads whatever the current filters show.
 - **Bulk changes** (admin): tick the boxes on the left of the Reviews table (or the header box to select everything shown), then use **Mark poster paid**, **Mark poster unpaid** or **Change status to…**.
 
-**Warranty**: every posted review is covered for 30 days from its **Post Date** (set `WARRANTY_DAYS` to change it). The admin and posters see a **Warranty** column: *Under warranty* with the days left, *Replace* for a review that was removed while still covered, or *Expired*. Filter by warranty with the **Any warranty** menu. When a poster (or a bulk change) first marks a review Posted or Live, its Post Date is set to that day so the warranty starts then; a posted review saved with no date also gets today's date. Clients (viewers) don't see warranty details.
+**Warranty**: every posted review is covered for 30 days from its **Post Date** (set `WARRANTY_DAYS` to change it). The admin sees a review's warranty in its **Edit** window, and posters in the **Update** window: under warranty with the days left, removed while still covered (needs replacing), or expired. To list reviews by warranty, use the **Any warranty** filter on the Reviews page. When a poster (or a bulk change) first marks a review Posted or Live, its Post Date is set to that day so the warranty starts then; a posted review saved with no date also gets today's date. Clients (viewers) don't see warranty details.
 
 **Paid** means whether the poster was paid for that review. Only the admin sees it; viewers and posters never receive it.
 

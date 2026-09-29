@@ -129,7 +129,7 @@ body:not(.is-admin):not(.is-poster) .editor-only { display: none !important; }
   overflow-x: auto;
 }
 table { width: 100%; border-collapse: collapse; }
-th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+th, td { padding: 10px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
 tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover { background: var(--subtle); }
 th {
@@ -141,13 +141,17 @@ th[aria-sort="ascending"]::after { content: " ▲"; }
 th[aria-sort="descending"]::after { content: " ▼"; }
 td.strong { font-weight: 600; }
 td.nowrap { white-space: nowrap; }
-td.review { max-width: 340px; min-width: 200px; }
+td.review { max-width: 320px; min-width: 170px; }
 .clamp {
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 td a { color: var(--accent); font-weight: 600; text-decoration: none; white-space: nowrap; }
 td a:hover { text-decoration: underline; }
 .row-actions { white-space: nowrap; }
+/* Keep Edit/Delete in view when the table scrolls sideways. */
+#records .row-actions, #records th.actions-col { position: sticky; right: 0; background: var(--surface); box-shadow: -1px 0 0 var(--line); }
+#records th.actions-col { background: var(--subtle); }
+#records tbody tr:hover .row-actions, #records tbody tr.selected .row-actions { background: var(--subtle); }
 .select-col { width: 36px; padding-right: 0; }
 .select-col input { width: 16px; height: 16px; margin: 2px 0 0; cursor: pointer; }
 tbody tr.selected { background: var(--subtle); }
@@ -172,10 +176,7 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; white-sp
 .status-posted { background: var(--posted-bg); color: var(--posted-ink); }
 .status-pending { background: var(--pending-bg); color: var(--pending-ink); }
 .status-removed { background: var(--removed-bg); color: var(--removed-ink); }
-.warranty-active { background: var(--live-bg); color: var(--live-ink); }
-.warranty-claim { background: var(--removed-bg); color: var(--removed-ink); }
-.warranty-expired { background: var(--neutral-bg); color: var(--muted); }
-td .sub { margin-top: 4px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.warranty-note { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--subtle); color: var(--ink); font-size: 14px; }
 .paid { background: var(--live-bg); color: var(--live-ink); }
 .unpaid { background: var(--neutral-bg); color: var(--muted); }
 

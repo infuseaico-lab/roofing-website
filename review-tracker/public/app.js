@@ -82,7 +82,6 @@ async function loadRecords() {
   state.warrantyDays = warrantyDays || 30;
   for (const r of records) {
     r._warranty = warrantyInfo(r);
-    r._warrantyEnd = r._warranty?.end ?? '';
   }
   state.records = records;
   state.statuses = statuses;
@@ -153,7 +152,6 @@ function render() {
         linkCell(r.reviewLink),
         statusCell(r.status),
       );
-      if (isAdmin || isPoster) tr.append(warrantyCell(r._warranty));
       if (isAdmin) tr.append(paidCell(r.paid));
       if (isAdmin) tr.append(actionsCell(r));
       if (isPoster) tr.append(posterActionCell(r));
@@ -182,7 +180,6 @@ function render() {
   $('#stat-total').textContent = scope.length;
   $('#stat-live').textContent = scope.filter((r) => r.status === 'Live').length;
   $('#stat-pending').textContent = scope.filter((r) => r.status === 'Pending' || r.status === 'Posted').length;
-  $('#stat-warranty').textContent = scope.filter((r) => r._warranty?.kind === 'active').length;
   $('#stat-unpaid').textContent = scope.filter((r) => !r.paid).length;
   if (isAdmin) updateBulkBar();
 }
@@ -325,24 +322,6 @@ function warrantyText(w) {
   return w.left === 0 ? 'Last day today' : days;
 }
 
-function warrantyCell(w) {
-  const td = document.createElement('td');
-  if (!w) {
-    td.className = 'muted';
-    td.textContent = '—';
-    return td;
-  }
-  const pill = document.createElement('span');
-  pill.className = `pill warranty-${w.kind}`;
-  pill.textContent = w.kind === 'active' ? 'Under warranty' : w.kind === 'claim' ? 'Replace' : 'Expired';
-  const note = document.createElement('div');
-  note.className = 'sub';
-  note.textContent = w.kind === 'expired' ? formatDate(w.end) : `${w.left} day${w.left === 1 ? '' : 's'} left · ends ${formatDate(w.end)}`;
-  td.append(pill, note);
-  td.title = warrantyText(w);
-  return td;
-}
-
 function posterActionCell(r) {
   const td = document.createElement('td');
   td.className = 'row-actions';
@@ -401,6 +380,11 @@ function openRecordDialog(record) {
     const client = $('#filter-client').value;
     if (client) form.elements.client.value = client;
   }
+  const w = record?._warranty;
+  $('#record-warranty').hidden = !record;
+  $('#record-warranty').textContent = w
+    ? `Warranty: ${warrantyText(w)} (${w.kind === 'expired' ? 'ended' : 'ends'} ${formatDate(w.end)})`
+    : `Warranty: starts when the review is Posted or Live, and lasts ${state.warrantyDays} days.`;
   $('#record-dialog').showModal();
 }
 
