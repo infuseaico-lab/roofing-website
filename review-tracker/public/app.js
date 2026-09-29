@@ -69,8 +69,8 @@ async function showApp(user) {
   document.body.classList.toggle('is-poster', user.role === 'poster');
   state.seenAt = user.notificationsSeenAt || '';
   clearInterval(state.pollTimer);
-  // Posters get new tasks and due dates without reloading the page.
-  if (user.role === 'poster') {
+  // Posters get new tasks and viewers new posts without reloading the page.
+  if (user.role !== 'admin') {
     state.pollTimer = setInterval(() => {
       if (document.visibilityState === 'visible' && state.user) loadRecords().catch(() => {});
     }, 60000);
@@ -109,7 +109,7 @@ async function loadRecords() {
   $('#client-options').replaceChildren(...names.map((c) => new Option(c)));
   $('#poster-options').replaceChildren(...state.posters.map((p) => new Option(p.name)));
   render();
-  if (state.user?.role === 'poster') renderNotifications();
+  if (state.user && state.user.role !== 'admin') renderNotifications();
   if (state.user?.role === 'admin') {
     renderCompanies();
     renderPosters();
@@ -155,6 +155,7 @@ function render() {
   tbody.replaceChildren(
     ...rows.map((r) => {
       const tr = document.createElement('tr');
+      tr.dataset.id = r.id;
       if (isAdmin) tr.append(selectCell(r));
       tr.append(
         cell(r.client, 'strong'),
@@ -1153,7 +1154,25 @@ async function savePrices(e) {
 
 // A poster is notified about Pending reviews that are open or assigned to them:
 // when the review is added or assigned, when its Post on date arrives, and while it is overdue.
+// A viewer is notified when a review for their company is first posted (Posted or Live).
+function buildViewerNotifications() {
+  const recent = new Date(Date.now() - 30 * 86400000).toISOString();
+  return state.records
+    .filter((r) => (r.status === 'Posted' || r.status === 'Live') && r.postedAt && r.postedAt > recent)
+    .map((r) => ({
+      r,
+      time: r.postedAt,
+      kind: 'posted',
+      title: `${r.client || 'Your business'}: new review posted`,
+      sub: [r.postDate ? `Posted ${formatDate(r.postDate)}` : 'Posted', /^https?:\/\//i.test(r.reviewLink || '') ? 'View on Google ↗' : '']
+        .filter(Boolean).join(' · '),
+      unread: r.postedAt > state.seenAt,
+    }))
+    .sort((a, b) => (b.unread - a.unread) || b.time.localeCompare(a.time));
+}
+
 function buildNotifications() {
+  if (state.user?.role === 'viewer') return buildViewerNotifications();
   const me = state.user?.name;
   const items = [];
   const localMidnight = (iso) => {
@@ -1204,15 +1223,23 @@ function renderNotifications() {
   if (!items.length) {
     const li = document.createElement('li');
     li.className = 'notif-empty';
-    li.textContent = 'Nothing to post right now. New reviews and due dates will show up here.';
+    li.textContent = state.user?.role === 'viewer'
+      ? 'No new reviews yet. You will be notified here when a review is posted.'
+      : 'Nothing to post right now. New reviews and due dates will show up here.';
     list.replaceChildren(li);
     return;
   }
   list.replaceChildren(
     ...items.map((n) => {
       const li = document.createElement('li');
-      const btn = document.createElement('button');
-      btn.type = 'button';
+      // A viewer's posted review opens on Google; everything else is a button.
+      const link = n.kind === 'posted' && /^https?:\/\//i.test(n.r.reviewLink || '');
+      const btn = document.createElement(link ? 'a' : 'button');
+      if (link) {
+        btn.href = n.r.reviewLink;
+        btn.target = '_blank';
+        btn.rel = 'noopener noreferrer';
+      } else btn.type = 'button';
       btn.className = `notif-item kind-${n.kind}${n.unread ? ' unread' : ''}`;
       const title = document.createElement('span');
       title.className = 'notif-title';
@@ -1223,12 +1250,21 @@ function renderNotifications() {
       btn.append(title, sub);
       btn.addEventListener('click', () => {
         closeNotifications();
-        openPostDialog(n.r);
+        if (n.kind !== 'posted') openPostDialog(n.r);
+        else if (!link) showRow(n.r.id);
       });
       li.append(btn);
       return li;
     }),
   );
+}
+
+function showRow(id) {
+  const tr = document.querySelector(`#records tbody tr[data-id="${CSS.escape(id)}"]`);
+  if (!tr) return;
+  tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  tr.classList.add('flash');
+  setTimeout(() => tr.classList.remove('flash'), 2000);
 }
 
 async function openNotifications() {

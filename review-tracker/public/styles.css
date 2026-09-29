@@ -108,6 +108,7 @@ label.check input { width: 18px; height: 18px; }
 body:not(.is-admin) .admin-only { display: none !important; }
 body:not(.is-admin):not(.is-poster) .editor-only { display: none !important; }
 body:not(.is-poster) .poster-only { display: none !important; }
+body.is-admin .notif { display: none !important; }
 
 /* ---------- tabs ---------- */
 
@@ -209,6 +210,9 @@ td .sub.due { color: var(--pending-ink); }
   content: ''; position: absolute; left: 12px; top: 16px; width: 8px; height: 8px; border-radius: 50%;
   background: var(--accent);
 }
+.notif-item { color: var(--ink); text-decoration: none; }
+.notif-item.kind-posted::before { background: var(--live-ink); }
+tbody tr.flash { background: var(--posted-bg); transition: background 0.3s; }
 .notif-item.kind-due::before { background: var(--pending-ink); }
 .notif-item.kind-overdue::before { background: var(--danger); }
 .notif-item:not(.unread)::before { opacity: 0.35; }

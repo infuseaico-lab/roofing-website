@@ -38,6 +38,9 @@ function loadDb() {
     db.viewers ??= [];
     db.companies ??= [];
     db.posters ??= [];
+    for (const r of db.records) {
+      if (isPosted(r.status) && !r.postedAt && r.postDate) r.postedAt = `${r.postDate}T00:00:00.000Z`;
+    }
     // "Pace" was replaced by a scheduled "Post on" date; carry over any pace that was a date.
     for (const r of db.records) {
       if (r.postOn === undefined) r.postOn = /^\d{4}-\d{2}-\d{2}$/.test(r.pace ?? '') ? r.pace : '';
@@ -216,6 +219,19 @@ function stampPrices(r) {
   return r;
 }
 
+// When a review was first posted, for client notifications. Backfilled reviews with an
+// older Posted-on date get that date, so they don't show up as news.
+function postedAtFor(r) {
+  return r.postDate && r.postDate < today() ? `${r.postDate}T00:00:00.000Z` : new Date().toISOString();
+}
+
+// Run after every save: lock in prices and note when the review was first posted.
+function settle(r) {
+  stampPrices(r);
+  if (isPosted(r.status) && !r.postedAt) r.postedAt = postedAtFor(r);
+  return r;
+}
+
 const sameName = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
 
 // The company name a viewer may see (as a 0- or 1-item list), read fresh on every
@@ -243,6 +259,10 @@ function me(session) {
     out.name = poster?.name || session.username;
     // Notifications newer than this are unread. New posters start from when they were added.
     out.notificationsSeenAt = poster?.notificationsSeenAt || poster?.createdAt || new Date(0).toISOString();
+  }
+  if (session.role === 'viewer') {
+    const viewer = db.viewers.find((v) => v.username === session.username);
+    out.notificationsSeenAt = viewer?.notificationsSeenAt || viewer?.createdAt || new Date(0).toISOString();
   }
   if (session.role !== 'admin') out.companies = sessionCompanies(session);
   return out;
@@ -365,12 +385,13 @@ async function handleApi(req, res, pathname) {
   }
 
   // A poster opened their notifications: everything up to now is read.
-  if (pathname === '/api/notifications/seen' && method === 'POST' && session.role === 'poster') {
-    const poster = db.posters.find((p) => p.username === session.username);
-    if (!poster) return send(res, 404, { error: 'Poster not found.' });
-    poster.notificationsSeenAt = new Date().toISOString();
+  if (pathname === '/api/notifications/seen' && method === 'POST' && !isAdmin) {
+    const list = session.role === 'poster' ? db.posters : db.viewers;
+    const account = list.find((u) => u.username === session.username);
+    if (!account) return send(res, 404, { error: 'Account not found.' });
+    account.notificationsSeenAt = new Date().toISOString();
     saveDb();
-    return send(res, 200, { notificationsSeenAt: poster.notificationsSeenAt });
+    return send(res, 200, { notificationsSeenAt: account.notificationsSeenAt });
   }
 
   // Posters update only the posting fields, and only on their companies' records.
@@ -384,7 +405,7 @@ async function handleApi(req, res, pathname) {
     // Marking a review posted starts its warranty today.
     const postDate = !isPosted(record.status) && isPosted(next.status) ? today() : record.postDate || next.postDate;
     Object.assign(record, { posterName: next.posterName, reviewLink: next.reviewLink, status: next.status, postDate, updatedAt: new Date().toISOString() });
-    stampPrices(record);
+    settle(record);
     saveDb();
     return send(res, 200, stripPrivate(record));
   }
@@ -394,7 +415,7 @@ async function handleApi(req, res, pathname) {
   if (pathname === '/api/records' && method === 'POST') {
     const body = await readJson(req);
     const now = new Date().toISOString();
-    const record = stampPrices({ id: crypto.randomUUID(), ...cleanRecord(body), createdAt: now, updatedAt: now });
+    const record = settle({ id: crypto.randomUUID(), ...cleanRecord(body), createdAt: now, updatedAt: now });
     if (record.posterName) record.assignedAt = now;
     db.records.push(record);
     saveDb();
@@ -405,7 +426,7 @@ async function handleApi(req, res, pathname) {
     const { records } = await readJson(req);
     if (!Array.isArray(records)) return send(res, 400, { error: 'Expected a list of records.' });
     const now = new Date().toISOString();
-    const added = records.map((r) => stampPrices({ id: crypto.randomUUID(), ...cleanRecord(r), createdAt: now, updatedAt: now }));
+    const added = records.map((r) => settle({ id: crypto.randomUUID(), ...cleanRecord(r), createdAt: now, updatedAt: now }));
     for (const r of added) if (r.posterName) r.assignedAt = now;
     db.records.push(...added);
     saveDb();
@@ -429,7 +450,7 @@ async function handleApi(req, res, pathname) {
       if (wanted.has(r.id)) {
         const startsWarranty = update.status && !isPosted(r.status) && isPosted(update.status);
         Object.assign(r, update, { updatedAt: now }, startsWarranty || (isPosted(r.status) && !r.postDate) ? { postDate: today() } : {});
-        stampPrices(r);
+        settle(r);
         updated++;
       }
     }
@@ -445,7 +466,7 @@ async function handleApi(req, res, pathname) {
       const body = await readJson(req);
       const before = db.records[idx];
       const now = new Date().toISOString();
-      db.records[idx] = stampPrices({ ...before, ...cleanRecord(body), updatedAt: now });
+      db.records[idx] = settle({ ...before, ...cleanRecord(body), updatedAt: now });
       // Giving a review to a (different) poster notifies them.
       const after = db.records[idx];
       if (after.posterName && !sameName(after.posterName, before.posterName)) after.assignedAt = now;
