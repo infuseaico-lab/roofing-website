@@ -76,6 +76,7 @@
               <th data-sort="listing">Listing</th>
               <th data-sort="pace">Pace</th>
               <th data-sort="review">Review</th>
+              <th>Images</th>
               <th data-sort="postDate">Post date</th>
               <th data-sort="posterName">Poster name</th>
               <th>Review link</th>
@@ -183,6 +184,7 @@
         <div><dt>Listing</dt><dd id="post-listing"></dd></div>
         <div class="span-2"><dt>Review to post</dt><dd><p id="post-review" class="post-review"></p>
           <button type="button" class="btn small" id="post-copy">Copy review text</button></dd></div>
+        <div class="span-2" id="post-image-row"><dt>Images to post</dt><dd><a id="post-image" target="_blank" rel="noopener noreferrer"></a></dd></div>
       </dl>
       <div class="grid">
         <label>Poster name <input id="post-poster" name="posterName"></label>
@@ -230,6 +232,7 @@
         <label>Status <select name="status"></select></label>
         <label class="span-2">Review link <input name="reviewLink" type="url" placeholder="https://"></label>
         <label class="span-2">Review <textarea name="review" rows="4"></textarea></label>
+        <label class="span-2">Image URL <input name="imageUrl" type="url" placeholder="https:// link to the photos to post with the review"></label>
         <label class="check"><input name="paid" type="checkbox"> Paid</label>
       </div>
       <datalist id="client-options"></datalist>
@@ -247,7 +250,7 @@
     <form id="import-form" method="dialog">
       <h2>Import from CSV</h2>
       <p class="muted">First row must be headers. Recognized columns:
-        Client, Listing, Pace, Review, Post Date, Poster Name, Review Link, Status, Paid.
+        Client, Listing, Pace, Review, Image URL, Post Date, Poster Name, Review Link, Status, Paid.
         Paid accepts Yes/No. Export from Excel or Google Sheets as CSV.</p>
       <input id="import-file" type="file" accept=".csv,text/csv" required>
       <p id="import-preview" class="muted"></p>

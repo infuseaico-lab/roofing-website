@@ -215,6 +215,7 @@ td.warn { color: var(--pending-ink); }
 .post-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin: 0; padding: 14px; background: var(--subtle); border: 1px solid var(--line); border-radius: 8px; }
 .post-summary dt { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .post-summary dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.post-summary a { color: var(--accent); font-weight: 600; }
 .post-review { margin: 0 0 8px; white-space: pre-wrap; max-height: 160px; overflow-y: auto; }
 
 .toast {

@@ -5,6 +5,7 @@ const COLUMNS = [
   ['listing', 'Listing'],
   ['pace', 'Pace'],
   ['review', 'Review'],
+  ['imageUrl', 'Image URL'],
   ['postDate', 'Post Date'],
   ['posterName', 'Poster Name'],
   ['reviewLink', 'Review Link'],
@@ -134,6 +135,7 @@ function render() {
         cell(r.listing),
         cell(r.pace),
         reviewCell(r.review),
+        linkCell(r.imageUrl, 'View ↗'),
         cell(formatDate(r.postDate), 'nowrap'),
         cell(r.posterName),
         linkCell(r.reviewLink),
@@ -188,14 +190,14 @@ function reviewCell(text) {
   return td;
 }
 
-function linkCell(url) {
+function linkCell(url, label = 'Open ↗') {
   const td = document.createElement('td');
   if (/^https?:\/\//i.test(url || '')) {
     const a = document.createElement('a');
     a.href = url;
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
-    a.textContent = 'Open ↗';
+    a.textContent = label;
     a.title = url;
     td.append(a);
   } else {
@@ -368,6 +370,10 @@ HEADER_KEYS.place = 'pace';
 HEADER_KEYS.date = 'postDate';
 HEADER_KEYS.poster = 'posterName';
 HEADER_KEYS.link = 'reviewLink';
+HEADER_KEYS.image = 'imageUrl';
+HEADER_KEYS.images = 'imageUrl';
+HEADER_KEYS.imageurl = 'imageUrl';
+HEADER_KEYS.imagesurl = 'imageUrl';
 
 function normalizeDate(value) {
   const v = value.trim();
@@ -794,6 +800,12 @@ function openPostDialog(r) {
   $('#post-client').textContent = r.client || '—';
   $('#post-listing').textContent = r.listing || '—';
   $('#post-review').textContent = r.review || 'No review text.';
+  const img = $('#post-image');
+  const hasImage = /^https?:\/\//i.test(r.imageUrl || '');
+  img.href = hasImage ? r.imageUrl : '#';
+  img.textContent = r.imageUrl || '';
+  $('#post-image-row').hidden = !r.imageUrl;
+  img.toggleAttribute('aria-disabled', !hasImage);
   $('#post-copy').hidden = !r.review;
   fillSelect($('#post-status'), state.statuses);
   $('#post-status').value = r.status;

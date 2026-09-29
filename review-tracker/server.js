@@ -21,7 +21,7 @@ const ADMIN_PASS = process.env.ADMIN_PASS || '55555';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 
-export const FIELDS = ['client', 'listing', 'pace', 'review', 'postDate', 'posterName', 'reviewLink', 'status', 'paid'];
+export const FIELDS = ['client', 'listing', 'pace', 'review', 'imageUrl', 'postDate', 'posterName', 'reviewLink', 'status', 'paid'];
 export const STATUSES = ['Pending', 'Posted', 'Live', 'Removed'];
 
 // ---------- storage ----------
@@ -153,7 +153,7 @@ function cleanRecord(input) {
   const r = {};
   for (const f of FIELDS) {
     if (f === 'paid') continue;
-    r[f] = String(input?.[f] ?? '').trim().slice(0, f === 'review' ? 10000 : 1000);
+    r[f] = String(input?.[f] ?? '').trim().slice(0, f === 'review' ? 10000 : 2000);
   }
   if (!STATUSES.includes(r.status)) {
     r.status = STATUSES.find((s) => s.toLowerCase() === r.status.toLowerCase()) || 'Pending';
