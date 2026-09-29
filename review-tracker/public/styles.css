@@ -16,7 +16,6 @@
   --pending-bg: #3d3212; --pending-ink: #fcd34d;
   --removed-bg: #46191b; --removed-ink: #fca5a5;
   --neutral-bg: #1c2d4a;
-  --star: #fbbc04;
   --toast-bg: #e7eefb; --toast-ink: #0b1426;
   color-scheme: dark;
 }
@@ -39,10 +38,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; letter-spacing: -0.01em; }
-.brand-mark {
-  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px;
-  background: var(--star); color: #fff; font-size: 16px;
-}
 
 /* ---------- buttons & inputs ---------- */
 

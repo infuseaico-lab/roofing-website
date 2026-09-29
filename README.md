@@ -24,6 +24,6 @@ Anything shown on the site as a dashed yellow chip or a labeled photo box is a p
 
 Design system: see `DESIGN.md`. Product context: see `PRODUCT.md`.
 
-## Review Tracker
+## Reputation Tracker
 
-`review-tracker/` is a separate small app for tracking Google review postings, with admin and read-only viewer logins. See `review-tracker/README.md`.
+`review-tracker/` is the Reputation Tracker, a separate small app for tracking Google review postings, with admin and read-only viewer logins. See `review-tracker/README.md`.
