@@ -65,6 +65,7 @@
         <div class="filters">
           <input id="search" type="search" placeholder="Search client, listing, poster, review…" aria-label="Search">
           <select id="filter-client" aria-label="Client"><option value="">All clients</option></select>
+          <select id="filter-platform" aria-label="Platform"><option value="">All platforms</option></select>
           <select id="filter-status" aria-label="Status"><option value="">All statuses</option></select>
           <select id="filter-warranty" aria-label="Warranty" class="editor-only">
             <option value="">Any warranty</option>
@@ -214,6 +215,17 @@
         </table>
       </div>
 
+      <h2 class="section-title">By platform</h2>
+      <div class="table-wrap">
+        <table id="stats-platforms">
+          <thead><tr>
+            <th>Platform</th><th class="num">Reviews posted</th><th class="num">Charged</th>
+            <th class="num">Poster cost</th><th class="num">Profit</th><th class="num">Margin</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
       <h2 class="section-title">By poster</h2>
       <div class="table-wrap">
         <table id="stats-posters">
@@ -274,6 +286,7 @@
       <h2>Update review</h2>
       <dl class="post-summary">
         <div><dt>Client</dt><dd id="post-client"></dd></div>
+        <div><dt>Platform</dt><dd id="post-platform"></dd></div>
         <div><dt>Listing</dt><dd id="post-listing"></dd></div>
         <div><dt>Post on</dt><dd id="post-on"></dd></div>
         <div class="span-2"><dt>Review to post</dt><dd><p id="post-review" class="post-review"></p>
@@ -300,7 +313,10 @@
       <h2 id="company-title">Add company</h2>
       <div class="grid">
         <label class="span-2">Company name <input id="co-name" name="name" required></label>
-        <label class="span-2">Listing URL <input id="co-listing" name="listingUrl" type="url" placeholder="https://maps.google.com/…"></label>
+        <fieldset class="span-2 company-picks">
+          <legend>Listing links (fill in the platforms this company is on)</legend>
+          <div id="co-listings" class="listing-grid"></div>
+        </fieldset>
         <label>Number of reviews <input id="co-reviews" name="reviewCount" type="number" min="0" step="1" inputmode="numeric"></label>
         <label>Amount paid ($) <input id="co-amount" name="amountPaid" type="number" min="0" step="0.01" inputmode="decimal"></label>
         <label>Start date <input id="co-start" name="startDate" type="date"></label>
@@ -320,6 +336,7 @@
       <h2 id="record-title">Add record</h2>
       <div class="grid">
         <label>Client <input name="client" required list="client-options"></label>
+        <label>Platform <select name="platform"></select></label>
         <label>Listing <input name="listing"></label>
         <label>Post on <input name="postOn" type="date"></label>
         <label>Posted on <input name="postDate" type="date"></label>

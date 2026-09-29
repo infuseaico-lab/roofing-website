@@ -21,8 +21,16 @@ const ADMIN_PASS = process.env.ADMIN_PASS || '55555';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 
-export const FIELDS = ['client', 'listing', 'postOn', 'review', 'imageUrl', 'postDate', 'posterName', 'reviewLink', 'status', 'paid'];
+export const FIELDS = ['client', 'platform', 'listing', 'postOn', 'review', 'imageUrl', 'postDate', 'posterName', 'reviewLink', 'status', 'paid'];
 export const STATUSES = ['Pending', 'Posted', 'Live', 'Removed'];
+export const PLATFORMS = ['Google', 'Houzz', 'Angi', 'BuildZoom', 'HomeAdvisor', 'Facebook', 'BBB', 'Porch', 'Thumbtack', 'Networx'];
+
+// Match a platform name loosely ("home advisor", "angi's list" -> Angi); unknown or blank means Google.
+function cleanPlatform(v) {
+  const key = String(v ?? '').toLowerCase().replace(/[^a-z]/g, '');
+  if (key.startsWith('angi')) return 'Angi';
+  return PLATFORMS.find((p) => p.toLowerCase() === key) || 'Google';
+}
 // Each posted review is guaranteed for this many days from its post date.
 const WARRANTY_DAYS = Number(process.env.WARRANTY_DAYS) || 30;
 
@@ -38,6 +46,12 @@ function loadDb() {
     db.viewers ??= [];
     db.companies ??= [];
     db.posters ??= [];
+    // Reviews used to be Google-only, and companies had a single (Google) listing link.
+    for (const r of db.records) r.platform ??= 'Google';
+    for (const c of db.companies) {
+      if (!c.listingUrls) c.listingUrls = c.listingUrl ? { Google: c.listingUrl } : {};
+      delete c.listingUrl;
+    }
     for (const r of db.records) {
       if (isPosted(r.status) && !r.postedAt && r.postDate) r.postedAt = `${r.postDate}T00:00:00.000Z`;
     }
@@ -177,6 +191,7 @@ function cleanRecord(input) {
     if (f === 'paid') continue;
     r[f] = String(input?.[f] ?? '').trim().slice(0, f === 'review' ? 10000 : 2000);
   }
+  r.platform = cleanPlatform(r.platform);
   if (!STATUSES.includes(r.status)) {
     r.status = STATUSES.find((s) => s.toLowerCase() === r.status.toLowerCase()) || 'Pending';
   }
@@ -196,7 +211,10 @@ function cleanCompany(input) {
   const amount = Number.parseFloat(text(input?.amountPaid).replace(/[$,\s]/g, ''));
   return {
     name: text(input?.name, 200),
-    listingUrl: text(input?.listingUrl, 2000),
+    // One listing link per platform.
+    listingUrls: Object.fromEntries(
+      PLATFORMS.map((p) => [p, text(input?.listingUrls?.[p], 2000)]).filter(([, url]) => url),
+    ),
     reviewCount: Number.isFinite(count) && count >= 0 ? count : null,
     paymentDate: date(input?.paymentDate),
     amountPaid: Number.isFinite(amount) && amount >= 0 ? Math.round(amount * 100) / 100 : null,
@@ -376,12 +394,12 @@ async function handleApi(req, res, pathname) {
   }
 
   if (pathname === '/api/records' && method === 'GET') {
-    if (isAdmin) return send(res, 200, { records: db.records, statuses: STATUSES, warrantyDays: WARRANTY_DAYS });
+    if (isAdmin) return send(res, 200, { records: db.records, statuses: STATUSES, platforms: PLATFORMS, warrantyDays: WARRANTY_DAYS });
     const names = sessionCompanies(session);
     let records = db.records.filter((r) => names.some((n) => sameName(n, r.client)));
     // Whether the poster was paid is for the admin only.
     records = records.map(stripPrivate);
-    return send(res, 200, { records, statuses: STATUSES, warrantyDays: WARRANTY_DAYS });
+    return send(res, 200, { records, statuses: STATUSES, platforms: PLATFORMS, warrantyDays: WARRANTY_DAYS });
   }
 
   // A poster opened their notifications: everything up to now is read.

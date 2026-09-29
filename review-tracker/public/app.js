@@ -2,6 +2,7 @@ const $ = (sel, root = document) => root.querySelector(sel);
 
 const COLUMNS = [
   ['client', 'Client'],
+  ['platform', 'Platform'],
   ['listing', 'Listing'],
   ['postOn', 'Post On'],
   ['review', 'Review'],
@@ -91,7 +92,8 @@ async function showApp(user) {
 }
 
 async function loadRecords() {
-  const { records, statuses, warrantyDays } = await api('/api/records');
+  const { records, statuses, platforms, warrantyDays } = await api('/api/records');
+  state.platforms = platforms || ['Google'];
   state.warrantyDays = warrantyDays || 30;
   for (const r of records) {
     r._warranty = warrantyInfo(r);
@@ -102,6 +104,8 @@ async function loadRecords() {
   for (const id of state.selected) if (!ids.has(id)) state.selected.delete(id);
   fillSelect($('#bulk-status'), statuses, 'Change status to…');
   fillSelect($('#filter-status'), statuses, 'All statuses');
+  fillSelect($('#filter-platform'), state.platforms, 'All platforms');
+  fillSelect($('[name=platform]', $('#record-form')), state.platforms);
   fillSelect($('[name=status]', $('#record-form')), statuses);
   const clients = [...new Set(records.map((r) => r.client).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   fillSelect($('#filter-client'), clients, 'All clients');
@@ -129,12 +133,14 @@ function filteredRecords() {
   const q = $('#search').value.trim().toLowerCase();
   const client = $('#filter-client').value;
   const status = $('#filter-status').value;
+  const platform = $('#filter-platform').value;
   const paid = $('#filter-paid').value;
   const warranty = $('#filter-warranty').value;
   const { key, dir } = state.sort;
   return state.records
     .filter((r) => !client || r.client === client)
     .filter((r) => !status || r.status === status)
+    .filter((r) => !platform || r.platform === platform)
     .filter((r) => !paid || (paid === 'yes') === r.paid)
     .filter((r) => !warranty || r._warranty?.kind === warranty)
     .filter((r) => !q || COLUMNS.some(([k]) => String(r[k] ?? '').toLowerCase().includes(q)))
@@ -158,8 +164,8 @@ function render() {
       tr.dataset.id = r.id;
       if (isAdmin) tr.append(selectCell(r));
       tr.append(
-        cell(r.client, 'strong'),
-        cell(r.listing),
+        clientCell(r),
+        /^https?:\/\//i.test(r.listing || '') ? linkCell(r.listing, 'Listing ↗') : cell(r.listing),
         postOnCell(r),
         reviewCell(r.review),
         linkCell(r.imageUrl, 'View ↗'),
@@ -350,6 +356,16 @@ function postOnCell(r) {
       td.append(note);
     }
   }
+  return td;
+}
+
+// Client name with the review's platform as a small tag underneath.
+function clientCell(r) {
+  const td = cell(r.client, 'strong');
+  const tag = document.createElement('div');
+  tag.className = 'platform-tag';
+  tag.textContent = r.platform || 'Google';
+  td.append(tag);
   return td;
 }
 
@@ -696,7 +712,7 @@ function renderCompanies() {
   const q = $('#co-search').value.trim().toLowerCase();
   const { key, dir } = state.coSort;
   const rows = state.companies
-    .filter((c) => !q || [c.name, c.listingUrl].some((v) => String(v ?? '').toLowerCase().includes(q)))
+    .filter((c) => !q || [c.name, ...Object.values(c.listingUrls ?? {})].some((v) => String(v ?? '').toLowerCase().includes(q)))
     .sort((a, b) => {
       const av = a[key], bv = b[key];
       if (av == null || av === '') return 1;
@@ -720,7 +736,7 @@ function renderCompanies() {
       actions.append(edit, del);
       tr.append(
         cell(c.name, 'strong'),
-        linkCell(c.listingUrl),
+        listingsCell(c.listingUrls),
         progressCell(liveCount(c), c.reviewCount),
         cell(formatDate(c.startDate), 'nowrap'),
         cell(formatDate(c.paymentDate), 'nowrap'),
@@ -743,6 +759,29 @@ function renderCompanies() {
   $('#co-ordered').textContent = state.companies.reduce((n, c) => n + (c.reviewCount || 0), 0);
   $('#co-live').textContent = state.companies.reduce((n, c) => n + liveCount(c), 0);
   $('#co-paid').textContent = money(state.companies.reduce((n, c) => n + (c.amountPaid || 0), 0));
+}
+
+// One small link per platform the company is listed on.
+function listingsCell(urls = {}) {
+  const td = document.createElement('td');
+  const box = document.createElement('div');
+  box.className = 'listings';
+  td.append(box);
+  const entries = Object.entries(urls).filter(([, u]) => /^https?:\/\//i.test(u));
+  if (!entries.length) {
+    td.className = 'muted';
+    box.textContent = '—';
+    return td;
+  }
+  for (const [platform, url] of entries) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = `${platform} ↗`;
+    box.append(a);
+  }
+  return td;
 }
 
 function progressCell(live, ordered) {
@@ -770,19 +809,33 @@ function openCompanyDialog(company) {
   state.editingCompanyId = company?.id ?? null;
   $('#company-title').textContent = company ? 'Edit company' : 'Add company';
   if (company) {
-    for (const key of ['name', 'listingUrl', 'reviewCount', 'paymentDate', 'amountPaid', 'startDate']) {
+    for (const key of ['name', 'reviewCount', 'paymentDate', 'amountPaid', 'startDate']) {
       form.elements[key].value = company[key] ?? '';
     }
   } else {
     form.elements.startDate.value = new Date().toLocaleDateString('en-CA');
   }
+  $('#co-listings').replaceChildren(
+    ...(state.platforms || ['Google']).map((p) => {
+      const label = document.createElement('label');
+      label.textContent = p;
+      const input = document.createElement('input');
+      input.type = 'url';
+      input.placeholder = 'https://';
+      input.dataset.platform = p;
+      input.value = company?.listingUrls?.[p] ?? '';
+      label.append(input);
+      return label;
+    }),
+  );
   $('#company-dialog').showModal();
 }
 
 async function saveCompany(e) {
   e.preventDefault();
   const form = e.target;
-  const body = Object.fromEntries(['name', 'listingUrl', 'reviewCount', 'paymentDate', 'amountPaid', 'startDate'].map((k) => [k, form.elements[k].value]));
+  const body = Object.fromEntries(['name', 'reviewCount', 'paymentDate', 'amountPaid', 'startDate'].map((k) => [k, form.elements[k].value]));
+  body.listingUrls = Object.fromEntries([...form.querySelectorAll('#co-listings input')].map((i) => [i.dataset.platform, i.value.trim()]));
   try {
     if (state.editingCompanyId) await api(`/api/companies/${state.editingCompanyId}`, { method: 'PUT', body });
     else await api('/api/companies', { method: 'POST', body });
@@ -928,6 +981,7 @@ function openPostDialog(r) {
   showError($('#post-error'), '');
   state.postingId = r.id;
   $('#post-client').textContent = r.client || '—';
+  $('#post-platform').textContent = r.platform || 'Google';
   $('#post-listing').textContent = r.listing || '—';
   $('#post-on').textContent = r.postOn ? formatDate(r.postOn) : 'No date set';
   $('#post-review').textContent = r.review || 'No review text.';
@@ -1057,6 +1111,17 @@ function renderStats() {
   });
   fillStatsTable('#stats-companies', companyRows, 'No reviews in this period.');
 
+  // By platform
+  const platformRows = (state.platforms || []).map((name) => {
+    const list = inScope.filter((r) => (r.platform || 'Google') === name);
+    const p = list.filter((r) => isPostedStatus(r.status));
+    const ch = sum(p, clientPriceOf);
+    const cost = sum(list.filter((r) => r.paid), posterPayOf) + sum(p.filter((r) => !r.paid), posterPayOf);
+    return { name, count: p.length, ch, cost, any: list.length };
+  }).filter((x) => x.any).map(({ name, count, ch, cost }) =>
+    [name, String(count), money(ch), money(cost), money(ch - cost), ch > 0 ? `${Math.round(((ch - cost) / ch) * 100)}%` : '—', ch - cost < 0]);
+  fillStatsTable('#stats-platforms', platformRows, 'No reviews in this period.');
+
   // By poster
   const byPoster = new Map();
   for (const r of inScope) {
@@ -1163,8 +1228,8 @@ function buildViewerNotifications() {
       r,
       time: r.postedAt,
       kind: 'posted',
-      title: `${r.client || 'Your business'}: new review posted`,
-      sub: [r.postDate ? `Posted ${formatDate(r.postDate)}` : 'Posted', /^https?:\/\//i.test(r.reviewLink || '') ? 'View on Google ↗' : '']
+      title: `${r.client || 'Your business'}: new ${r.platform || 'Google'} review posted`,
+      sub: [r.postDate ? `Posted ${formatDate(r.postDate)}` : 'Posted', /^https?:\/\//i.test(r.reviewLink || '') ? `View on ${r.platform || 'Google'} ↗` : '']
         .filter(Boolean).join(' · '),
       unread: r.postedAt > state.seenAt,
     }))
@@ -1315,7 +1380,7 @@ $('#logout').addEventListener('click', async () => {
   showLogin();
 });
 
-['#search', '#filter-client', '#filter-status', '#filter-paid', '#filter-warranty'].forEach((sel) =>
+['#search', '#filter-client', '#filter-platform', '#filter-status', '#filter-paid', '#filter-warranty'].forEach((sel) =>
   $(sel).addEventListener('input', render),
 );
 
@@ -1371,12 +1436,16 @@ document.querySelectorAll('th[data-co-sort]').forEach((th) =>
     renderCompanies();
   }),
 );
-// Picking a known company as the client fills in its listing URL.
-$('#record-form').elements.client.addEventListener('change', (e) => {
-  const listing = $('#record-form').elements.listing;
-  const company = state.companies.find((c) => sameName(c.name, e.target.value));
-  if (company?.listingUrl && !listing.value) listing.value = company.listingUrl;
-});
+// Picking a known company and platform fills in that platform's listing link.
+function fillListing() {
+  const form = $('#record-form');
+  const company = state.companies.find((c) => sameName(c.name, form.elements.client.value));
+  const url = company?.listingUrls?.[form.elements.platform.value];
+  const known = Object.values(company?.listingUrls ?? {});
+  if (url && (!form.elements.listing.value || known.includes(form.elements.listing.value))) form.elements.listing.value = url;
+}
+$('#record-form').elements.client.addEventListener('change', fillListing);
+$('#record-form').elements.platform.addEventListener('change', fillListing);
 $('#record-form').addEventListener('submit', saveRecord);
 $('#export-btn').addEventListener('click', exportCsv);
 

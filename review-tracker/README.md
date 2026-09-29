@@ -17,7 +17,7 @@ npm start          # http://localhost:3000
 
 ## Records
 
-Each record has: Client, Listing, Post On (the date you want it posted; Pending reviews past that date show as overdue), Review, Image URL (a link to the photos to post with the review), Posted On (called Post Date in CSV files), Poster Name, Review Link, Status (Pending, Posted, Live, Removed) and Paid (whether the poster was paid).
+Each record has: Client, Platform (Google, Houzz, Angi, BuildZoom, HomeAdvisor, Facebook, BBB, Porch, Thumbtack or Networx; Google if left blank), Listing, Post On (the date you want it posted; Pending reviews past that date show as overdue), Review, Image URL (a link to the photos to post with the review), Posted On (called Post Date in CSV files), Poster Name, Review Link, Status (Pending, Posted, Live, Removed) and Paid (whether the poster was paid).
 
 - **+ Add record** adds one record at a time.
 - **Import CSV** loads many at once. The first row must hold the column names above; `Paid` accepts Yes/No.
@@ -27,6 +27,8 @@ Each record has: Client, Listing, Post On (the date you want it posted; Pending 
 **Warranty**: every posted review is covered for 30 days from its **Post Date** (set `WARRANTY_DAYS` to change it). The admin sees a review's warranty in its **Edit** window, and posters in the **Update** window: under warranty with the days left, removed while still covered (needs replacing), or expired. To list reviews by warranty, use the **Any warranty** filter on the Reviews page. When a poster (or a bulk change) first marks a review Posted or Live, its Post Date is set to that day so the warranty starts then; a posted review saved with no date also gets today's date. Clients (viewers) don't see warranty details.
 
 **Paid** means whether the poster was paid for that review. Only the admin sees it; viewers and posters never receive it.
+
+Each company can have a listing link per platform (Companies tab → Edit). When you add a review and choose the client and platform, that platform's listing link is filled in. Filter the Reviews table by platform, and see a **By platform** breakdown in Statistics.
 
 ## Statistics and prices (admin only)
 
