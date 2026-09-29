@@ -103,7 +103,7 @@ label.check input { width: 18px; height: 18px; }
 .login-card {
   width: 100%; max-width: 360px; display: grid; gap: 16px;
   padding: 28px; background: var(--surface); border: 1px solid var(--line);
-  border-radius: 14px; box-shadow: 0 8px 30px rgba(20, 30, 50, 0.06);
+  border-radius: 14px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
 }
 .login-card h1 { margin: 4px 0 0; font-size: 22px; }
 
@@ -181,9 +181,9 @@ td a:hover { text-decoration: underline; }
 dialog {
   background: var(--surface); color: var(--ink);
   width: min(640px, calc(100vw - 32px)); padding: 0; border: 0; border-radius: 14px;
-  box-shadow: 0 20px 60px rgba(20, 30, 50, 0.25);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
-dialog::backdrop { background: rgba(20, 25, 35, 0.45); }
+dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
 dialog form, .dialog-body { display: grid; gap: 14px; padding: 24px; }
 dialog h2 { margin: 0; font-size: 20px; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
