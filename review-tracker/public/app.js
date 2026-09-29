@@ -19,6 +19,9 @@ const state = {
   sort: { key: 'postDate', dir: -1 },
   editingId: null,
   importRows: [],
+  companies: [],
+  coSort: { key: 'startDate', dir: -1 },
+  editingCompanyId: null,
 };
 
 // ---------- api ----------
@@ -55,6 +58,9 @@ async function showApp(user) {
   $('#who').textContent = `${user.username} · ${user.role === 'admin' ? 'Admin' : 'View only'}`;
   $('#login-view').hidden = true;
   $('#app-view').hidden = false;
+  showTab('reviews');
+  if (user.role === 'admin') await loadCompanies();
+  else state.companies = [];
   await loadRecords();
 }
 
@@ -66,8 +72,10 @@ async function loadRecords() {
   fillSelect($('[name=status]', $('#record-form')), statuses);
   const clients = [...new Set(records.map((r) => r.client).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   fillSelect($('#filter-client'), clients, 'All clients');
-  $('#client-options').replaceChildren(...clients.map((c) => new Option(c)));
+  const names = [...new Set([...clients, ...state.companies.map((c) => c.name)])].sort((a, b) => a.localeCompare(b));
+  $('#client-options').replaceChildren(...names.map((c) => new Option(c)));
   render();
+  if (state.user?.role === 'admin') renderCompanies();
 }
 
 function fillSelect(select, values, allLabel) {
@@ -445,6 +453,138 @@ async function saveViewer(e) {
   }
 }
 
+// ---------- companies (admin only) ----------
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t) => t.dataset.tab === name ? t.setAttribute('aria-current', 'page') : t.removeAttribute('aria-current'));
+  $('#reviews-panel').hidden = name !== 'reviews';
+  $('#companies-panel').hidden = name !== 'companies';
+}
+
+async function loadCompanies() {
+  const { companies } = await api('/api/companies');
+  state.companies = companies;
+}
+
+const sameName = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
+const liveCount = (company) => state.records.filter((r) => r.status === 'Live' && sameName(r.client, company.name)).length;
+const money = (n) => (n == null ? '' : n.toLocaleString(undefined, { style: 'currency', currency: 'USD' }));
+
+function renderCompanies() {
+  const q = $('#co-search').value.trim().toLowerCase();
+  const { key, dir } = state.coSort;
+  const rows = state.companies
+    .filter((c) => !q || [c.name, c.listingUrl].some((v) => String(v ?? '').toLowerCase().includes(q)))
+    .sort((a, b) => {
+      const av = a[key], bv = b[key];
+      if (av == null || av === '') return 1;
+      if (bv == null || bv === '') return -1;
+      return (typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv))) * dir;
+    });
+
+  $('#companies tbody').replaceChildren(
+    ...rows.map((c) => {
+      const tr = document.createElement('tr');
+      const del = document.createElement('button');
+      del.className = 'btn small danger';
+      del.textContent = 'Delete';
+      del.addEventListener('click', () => deleteCompany(c));
+      const edit = document.createElement('button');
+      edit.className = 'btn small';
+      edit.textContent = 'Edit';
+      edit.addEventListener('click', () => openCompanyDialog(c));
+      const actions = document.createElement('td');
+      actions.className = 'row-actions';
+      actions.append(edit, del);
+      tr.append(
+        cell(c.name, 'strong'),
+        linkCell(c.listingUrl),
+        progressCell(liveCount(c), c.reviewCount),
+        cell(formatDate(c.startDate), 'nowrap'),
+        cell(formatDate(c.paymentDate), 'nowrap'),
+        cell(money(c.amountPaid), 'num'),
+        actions,
+      );
+      return tr;
+    }),
+  );
+
+  const empty = $('#co-empty');
+  empty.hidden = rows.length > 0;
+  empty.textContent = state.companies.length ? 'No companies match this search.' : 'No companies yet. Use “+ Add company” to add your first one.';
+
+  document.querySelectorAll('th[data-co-sort]').forEach((th) => {
+    th.setAttribute('aria-sort', th.dataset.coSort === key ? (dir === 1 ? 'ascending' : 'descending') : 'none');
+  });
+
+  $('#co-count').textContent = state.companies.length;
+  $('#co-ordered').textContent = state.companies.reduce((n, c) => n + (c.reviewCount || 0), 0);
+  $('#co-live').textContent = state.companies.reduce((n, c) => n + liveCount(c), 0);
+  $('#co-paid').textContent = money(state.companies.reduce((n, c) => n + (c.amountPaid || 0), 0));
+}
+
+function progressCell(live, ordered) {
+  const td = document.createElement('td');
+  td.className = 'progress-cell';
+  const label = document.createElement('span');
+  label.textContent = ordered ? `${live} of ${ordered} live` : `${live} live`;
+  td.append(label);
+  if (ordered) {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const fill = document.createElement('span');
+    fill.style.width = `${Math.min(100, (live / ordered) * 100)}%`;
+    if (live >= ordered) bar.classList.add('done');
+    bar.append(fill);
+    td.append(bar);
+  }
+  return td;
+}
+
+function openCompanyDialog(company) {
+  const form = $('#company-form');
+  form.reset();
+  showError($('#company-error'), '');
+  state.editingCompanyId = company?.id ?? null;
+  $('#company-title').textContent = company ? 'Edit company' : 'Add company';
+  if (company) {
+    for (const key of ['name', 'listingUrl', 'reviewCount', 'paymentDate', 'amountPaid', 'startDate']) {
+      form.elements[key].value = company[key] ?? '';
+    }
+  } else {
+    form.elements.startDate.value = new Date().toLocaleDateString('en-CA');
+  }
+  $('#company-dialog').showModal();
+}
+
+async function saveCompany(e) {
+  e.preventDefault();
+  const form = e.target;
+  const body = Object.fromEntries(['name', 'listingUrl', 'reviewCount', 'paymentDate', 'amountPaid', 'startDate'].map((k) => [k, form.elements[k].value]));
+  try {
+    if (state.editingCompanyId) await api(`/api/companies/${state.editingCompanyId}`, { method: 'PUT', body });
+    else await api('/api/companies', { method: 'POST', body });
+    $('#company-dialog').close();
+    toast(state.editingCompanyId ? 'Company updated' : 'Company added');
+    await loadCompanies();
+    await loadRecords();
+  } catch (err) {
+    showError($('#company-error'), err.message);
+  }
+}
+
+async function deleteCompany(c) {
+  if (!(await confirmAction(`Delete ${c.name}? Its review records stay.`, 'Delete'))) return;
+  try {
+    await api(`/api/companies/${c.id}`, { method: 'DELETE' });
+    toast('Company deleted');
+    await loadCompanies();
+    await loadRecords();
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
 // ---------- wiring ----------
 
 $('#login-form').addEventListener('submit', async (e) => {
@@ -484,6 +624,23 @@ document.querySelectorAll('th[data-sort]').forEach((th) =>
 );
 
 $('#add-btn').addEventListener('click', () => openRecordDialog(null));
+document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
+$('#add-company-btn').addEventListener('click', () => openCompanyDialog(null));
+$('#company-form').addEventListener('submit', saveCompany);
+$('#co-search').addEventListener('input', renderCompanies);
+document.querySelectorAll('th[data-co-sort]').forEach((th) =>
+  th.addEventListener('click', () => {
+    const key = th.dataset.coSort;
+    state.coSort = { key, dir: state.coSort.key === key ? -state.coSort.dir : 1 };
+    renderCompanies();
+  }),
+);
+// Picking a known company as the client fills in its listing URL.
+$('#record-form').elements.client.addEventListener('change', (e) => {
+  const listing = $('#record-form').elements.listing;
+  const company = state.companies.find((c) => sameName(c.name, e.target.value));
+  if (company?.listingUrl && !listing.value) listing.value = company.listingUrl;
+});
 $('#record-form').addEventListener('submit', saveRecord);
 $('#export-btn').addEventListener('click', exportCsv);
 

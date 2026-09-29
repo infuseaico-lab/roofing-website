@@ -20,6 +20,10 @@ Each record has: Client, Listing, Pace, Review, Post Date, Poster Name, Review L
 - **Import CSV** loads many at once. The first row must hold the column names above; `Paid` accepts Yes/No.
 - **Export CSV** downloads whatever the current filters show.
 
+## Companies (admin only)
+
+The **Companies** tab stores each company's name, listing URL, number of reviews ordered, start date, payment date and amount paid. It also shows how many of that company's reviews are live, by matching record **Client** names to the company name. Viewers never see this tab, and the server refuses company requests from viewer logins. When you add a record and pick a known company as the client, its listing URL fills in automatically.
+
 ## Data and hosting
 
 Records are saved to `data/db.json`. Set `DATA_DIR` to put the file somewhere else. That folder is git-ignored, so back it up.

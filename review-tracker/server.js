@@ -30,10 +30,11 @@ function loadDb() {
     const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
     db.records ??= [];
     db.viewers ??= [];
+    db.companies ??= [];
     return db;
   } catch (err) {
     if (err.code !== 'ENOENT') throw err;
-    return { records: [], viewers: [] };
+    return { records: [], viewers: [], companies: [] };
   }
 }
 
@@ -132,6 +133,21 @@ function cleanRecord(input) {
   const paid = input?.paid;
   r.paid = paid === true || /^(yes|y|true|1|paid)$/i.test(String(paid ?? '').trim());
   return r;
+}
+
+function cleanCompany(input) {
+  const text = (v, max = 1000) => String(v ?? '').trim().slice(0, max);
+  const date = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(text(v)) ? text(v) : '');
+  const count = Number.parseInt(text(input?.reviewCount), 10);
+  const amount = Number.parseFloat(text(input?.amountPaid).replace(/[$,\s]/g, ''));
+  return {
+    name: text(input?.name, 200),
+    listingUrl: text(input?.listingUrl, 2000),
+    reviewCount: Number.isFinite(count) && count >= 0 ? count : null,
+    paymentDate: date(input?.paymentDate),
+    amountPaid: Number.isFinite(amount) && amount >= 0 ? Math.round(amount * 100) / 100 : null,
+    startDate: date(input?.startDate),
+  };
 }
 
 // ---------- http helpers ----------
@@ -269,6 +285,38 @@ async function handleApi(req, res, pathname) {
     }
     if (method === 'DELETE') {
       db.records.splice(idx, 1);
+      saveDb();
+      return send(res, 200, { ok: true });
+    }
+  }
+
+  if (pathname === '/api/companies' && method === 'GET') {
+    return send(res, 200, { companies: db.companies });
+  }
+
+  if (pathname === '/api/companies' && method === 'POST') {
+    const company = cleanCompany(await readJson(req));
+    if (!company.name) return send(res, 400, { error: 'Company name is required.' });
+    const now = new Date().toISOString();
+    const record = { id: crypto.randomUUID(), ...company, createdAt: now, updatedAt: now };
+    db.companies.push(record);
+    saveDb();
+    return send(res, 201, record);
+  }
+
+  const companyMatch = pathname.match(/^\/api\/companies\/([\w-]+)$/);
+  if (companyMatch) {
+    const idx = db.companies.findIndex((c) => c.id === companyMatch[1]);
+    if (idx === -1) return send(res, 404, { error: 'Company not found.' });
+    if (method === 'PUT') {
+      const company = cleanCompany(await readJson(req));
+      if (!company.name) return send(res, 400, { error: 'Company name is required.' });
+      db.companies[idx] = { ...db.companies[idx], ...company, updatedAt: new Date().toISOString() };
+      saveDb();
+      return send(res, 200, db.companies[idx]);
+    }
+    if (method === 'DELETE') {
+      db.companies.splice(idx, 1);
       saveDb();
       return send(res, 200, { ok: true });
     }
