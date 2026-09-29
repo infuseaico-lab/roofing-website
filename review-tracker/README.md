@@ -1,4 +1,4 @@
-# Reputation Tracker
+# Reputation Pilot
 
 A small web app for tracking Google review postings. It has no dependencies and needs only Node.js 18 or newer.
 

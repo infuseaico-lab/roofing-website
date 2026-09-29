@@ -1,4 +1,4 @@
-// Reputation Tracker: a small zero-dependency Node server.
+// Reputation Pilot: a small zero-dependency Node server.
 // Admin can add, edit, delete and import review records and manage companies, posters and viewer logins.
 // Posters can update the posting fields (poster name, review link, status) of their companies' records.
 // Viewers can only read the records of the company assigned to them.
@@ -603,6 +603,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Reputation Tracker running at http://localhost:${PORT}`);
+  console.log(`Reputation Pilot running at http://localhost:${PORT}`);
   if (!process.env.ADMIN_PASS) console.log('Using the default admin login. Set ADMIN_USER and ADMIN_PASS to change it.');
 });
