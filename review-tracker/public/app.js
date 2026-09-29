@@ -365,8 +365,9 @@ function posterActionCell(r) {
 
 function formatDate(iso) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return iso || '';
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  // MM/DD/YY
+  const [y, m, d] = iso.split('-');
+  return `${m}/${d}/${y.slice(-2)}`;
 }
 
 function toast(msg) {
@@ -555,7 +556,7 @@ function exportCsv() {
   const cols = state.user?.role === 'admin' ? COLUMNS : COLUMNS.filter(([k]) => k !== 'paid');
   const lines = [cols.map(([, l]) => l).join(',')];
   for (const r of filteredRecords()) {
-    lines.push(cols.map(([k]) => esc(k === 'paid' ? (r.paid ? 'Yes' : 'No') : r[k])).join(','));
+    lines.push(cols.map(([k]) => esc(k === 'paid' ? (r.paid ? 'Yes' : 'No') : k === 'postDate' || k === 'postOn' ? formatDate(r[k]) : r[k])).join(','));
   }
   const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
