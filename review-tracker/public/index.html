@@ -47,7 +47,7 @@
         <div class="stat"><span class="stat-num" id="stat-total">0</span><span class="stat-label">Total reviews</span></div>
         <div class="stat"><span class="stat-num" id="stat-live">0</span><span class="stat-label">Live</span></div>
         <div class="stat"><span class="stat-num" id="stat-pending">0</span><span class="stat-label">Pending / posted</span></div>
-        <div class="stat hide-for-poster"><span class="stat-num" id="stat-unpaid">0</span><span class="stat-label">Unpaid</span></div>
+        <div class="stat admin-only"><span class="stat-num" id="stat-unpaid">0</span><span class="stat-label">Posters unpaid</span></div>
       </section>
 
       <section class="toolbar">
@@ -55,10 +55,10 @@
           <input id="search" type="search" placeholder="Search client, listing, poster, review…" aria-label="Search">
           <select id="filter-client" aria-label="Client"><option value="">All clients</option></select>
           <select id="filter-status" aria-label="Status"><option value="">All statuses</option></select>
-          <select id="filter-paid" aria-label="Paid" class="hide-for-poster">
+          <select id="filter-paid" aria-label="Poster paid" class="admin-only">
             <option value="">Any payment</option>
-            <option value="yes">Paid</option>
-            <option value="no">Unpaid</option>
+            <option value="yes">Poster paid</option>
+            <option value="no">Poster unpaid</option>
           </select>
         </div>
         <div class="actions">
@@ -68,10 +68,19 @@
         </div>
       </section>
 
+      <section id="bulk-bar" class="bulk-bar admin-only" hidden aria-label="Bulk actions">
+        <strong id="bulk-count">0 selected</strong>
+        <button id="bulk-paid" class="btn small">Mark poster paid</button>
+        <button id="bulk-unpaid" class="btn small">Mark poster unpaid</button>
+        <select id="bulk-status" aria-label="Change status of selected"><option value="">Change status to…</option></select>
+        <button id="bulk-clear" class="btn small ghost">Clear selection</button>
+      </section>
+
       <div class="table-wrap">
         <table id="records">
           <thead>
             <tr>
+              <th class="admin-only select-col"><input type="checkbox" id="select-all" aria-label="Select all shown records"></th>
               <th data-sort="client">Client</th>
               <th data-sort="listing">Listing</th>
               <th data-sort="pace">Pace</th>
@@ -81,7 +90,7 @@
               <th data-sort="posterName">Poster name</th>
               <th>Review link</th>
               <th data-sort="status">Status</th>
-              <th data-sort="paid" class="hide-for-poster">Paid</th>
+              <th data-sort="paid" class="admin-only">Poster paid</th>
               <th class="editor-only"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
@@ -233,7 +242,7 @@
         <label class="span-2">Review link <input name="reviewLink" type="url" placeholder="https://"></label>
         <label class="span-2">Review <textarea name="review" rows="4"></textarea></label>
         <label class="span-2">Image URL <input name="imageUrl" type="url" placeholder="https:// link to the photos to post with the review"></label>
-        <label class="check"><input name="paid" type="checkbox"> Paid</label>
+        <label class="check"><input name="paid" type="checkbox"> Poster paid</label>
       </div>
       <datalist id="client-options"></datalist>
       <datalist id="poster-options"></datalist>
@@ -251,7 +260,7 @@
       <h2>Import from CSV</h2>
       <p class="muted">First row must be headers. Recognized columns:
         Client, Listing, Pace, Review, Image URL, Post Date, Poster Name, Review Link, Status, Paid.
-        Paid accepts Yes/No. Export from Excel or Google Sheets as CSV.</p>
+        Paid (whether the poster was paid) accepts Yes/No. Export from Excel or Google Sheets as CSV.</p>
       <input id="import-file" type="file" accept=".csv,text/csv" required>
       <p id="import-preview" class="muted"></p>
       <p class="error" id="import-error" role="alert" hidden></p>

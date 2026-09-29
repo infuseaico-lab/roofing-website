@@ -15,11 +15,14 @@ npm start          # http://localhost:3000
 
 ## Records
 
-Each record has: Client, Listing, Pace, Review, Image URL (a link to the photos to post with the review), Post Date, Poster Name, Review Link, Status (Pending, Posted, Live, Removed) and Paid.
+Each record has: Client, Listing, Pace, Review, Image URL (a link to the photos to post with the review), Post Date, Poster Name, Review Link, Status (Pending, Posted, Live, Removed) and Paid (whether the poster was paid).
 
 - **+ Add record** adds one record at a time.
 - **Import CSV** loads many at once. The first row must hold the column names above; `Paid` accepts Yes/No.
 - **Export CSV** downloads whatever the current filters show.
+- **Bulk changes** (admin): tick the boxes on the left of the Reviews table (or the header box to select everything shown), then use **Mark poster paid**, **Mark poster unpaid** or **Change status to…**.
+
+**Paid** means whether the poster was paid for that review. Only the admin sees it; viewers and posters never receive it.
 
 ## Companies (admin only)
 

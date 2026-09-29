@@ -27,6 +27,7 @@ const state = {
   posters: [],
   editingPosterId: null,
   postingId: null,
+  selected: new Set(),
 };
 
 // ---------- api ----------
@@ -80,6 +81,9 @@ async function loadRecords() {
   const { records, statuses } = await api('/api/records');
   state.records = records;
   state.statuses = statuses;
+  const ids = new Set(records.map((r) => r.id));
+  for (const id of state.selected) if (!ids.has(id)) state.selected.delete(id);
+  fillSelect($('#bulk-status'), statuses, 'Change status to…');
   fillSelect($('#filter-status'), statuses, 'All statuses');
   fillSelect($('[name=status]', $('#record-form')), statuses);
   const clients = [...new Set(records.map((r) => r.client).filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -130,6 +134,7 @@ function render() {
   tbody.replaceChildren(
     ...rows.map((r) => {
       const tr = document.createElement('tr');
+      if (isAdmin) tr.append(selectCell(r));
       tr.append(
         cell(r.client, 'strong'),
         cell(r.listing),
@@ -141,7 +146,7 @@ function render() {
         linkCell(r.reviewLink),
         statusCell(r.status),
       );
-      if (!isPoster) tr.append(paidCell(r.paid));
+      if (isAdmin) tr.append(paidCell(r.paid));
       if (isAdmin) tr.append(actionsCell(r));
       if (isPoster) tr.append(posterActionCell(r));
       return tr;
@@ -170,6 +175,7 @@ function render() {
   $('#stat-live').textContent = scope.filter((r) => r.status === 'Live').length;
   $('#stat-pending').textContent = scope.filter((r) => r.status === 'Pending' || r.status === 'Posted').length;
   $('#stat-unpaid').textContent = scope.filter((r) => !r.paid).length;
+  if (isAdmin) updateBulkBar();
 }
 
 function cell(text, cls) {
@@ -237,6 +243,46 @@ function actionsCell(r) {
   del.addEventListener('click', () => deleteRecord(r));
   td.append(edit, del);
   return td;
+}
+
+function selectCell(r) {
+  const td = document.createElement('td');
+  td.className = 'select-col';
+  const box = document.createElement('input');
+  box.type = 'checkbox';
+  box.checked = state.selected.has(r.id);
+  box.setAttribute('aria-label', `Select ${r.client || 'record'}${r.posterName ? ` by ${r.posterName}` : ''}`);
+  box.addEventListener('change', () => {
+    box.checked ? state.selected.add(r.id) : state.selected.delete(r.id);
+    td.parentElement.classList.toggle('selected', box.checked);
+    updateBulkBar();
+  });
+  td.append(box);
+  queueMicrotask(() => td.parentElement?.classList.toggle('selected', box.checked));
+  return td;
+}
+
+function updateBulkBar() {
+  const n = state.selected.size;
+  $('#bulk-bar').hidden = n === 0;
+  $('#bulk-count').textContent = `${n} selected`;
+  const shown = filteredRecords();
+  const picked = shown.filter((r) => state.selected.has(r.id)).length;
+  const all = $('#select-all');
+  all.checked = shown.length > 0 && picked === shown.length;
+  all.indeterminate = picked > 0 && picked < shown.length;
+}
+
+async function bulkUpdate(changes, label) {
+  const ids = [...state.selected];
+  try {
+    const { updated } = await api('/api/records/bulk', { method: 'POST', body: { ids, changes } });
+    state.selected.clear();
+    toast(`${updated} record${updated === 1 ? '' : 's'} ${label}`);
+    await loadRecords();
+  } catch (err) {
+    toast(err.message);
+  }
 }
 
 function posterActionCell(r) {
@@ -427,9 +473,11 @@ function exportCsv() {
     const s = String(v ?? '');
     return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const lines = [COLUMNS.map(([, l]) => l).join(',')];
+  // Only the admin exports the poster-paid column.
+  const cols = state.user?.role === 'admin' ? COLUMNS : COLUMNS.filter(([k]) => k !== 'paid');
+  const lines = [cols.map(([, l]) => l).join(',')];
   for (const r of filteredRecords()) {
-    lines.push(COLUMNS.map(([k]) => esc(k === 'paid' ? (r.paid ? 'Yes' : 'No') : r[k])).join(','));
+    lines.push(cols.map(([k]) => esc(k === 'paid' ? (r.paid ? 'Yes' : 'No') : r[k])).join(','));
   }
   const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
@@ -885,6 +933,21 @@ document.querySelectorAll('th[data-sort]').forEach((th) =>
 );
 
 $('#add-btn').addEventListener('click', () => openRecordDialog(null));
+$('#select-all').addEventListener('change', (e) => {
+  for (const r of filteredRecords()) e.target.checked ? state.selected.add(r.id) : state.selected.delete(r.id);
+  render();
+});
+$('#bulk-paid').addEventListener('click', () => bulkUpdate({ paid: true }, 'marked poster paid'));
+$('#bulk-unpaid').addEventListener('click', () => bulkUpdate({ paid: false }, 'marked poster unpaid'));
+$('#bulk-status').addEventListener('change', (e) => {
+  const status = e.target.value;
+  e.target.value = '';
+  if (status) bulkUpdate({ status }, `set to ${status}`);
+});
+$('#bulk-clear').addEventListener('click', () => {
+  state.selected.clear();
+  render();
+});
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
 $('#add-company-btn').addEventListener('click', () => openCompanyDialog(null));
 $('#add-poster-btn').addEventListener('click', () => openPosterDialog(null));

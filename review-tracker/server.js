@@ -316,8 +316,8 @@ async function handleApi(req, res, pathname) {
     if (isAdmin) return send(res, 200, { records: db.records, statuses: STATUSES });
     const names = sessionCompanies(session);
     let records = db.records.filter((r) => names.some((n) => sameName(n, r.client)));
-    // Payment status is between the admin and the client; posters don't see it.
-    if (session.role === 'poster') records = records.map(({ paid, ...r }) => r);
+    // Whether the poster was paid is for the admin only.
+    records = records.map(({ paid, ...r }) => r);
     return send(res, 200, { records, statuses: STATUSES });
   }
 
@@ -354,6 +354,29 @@ async function handleApi(req, res, pathname) {
     db.records.push(...added);
     saveDb();
     return send(res, 201, { added: added.length });
+  }
+
+  if (pathname === '/api/records/bulk' && method === 'POST') {
+    const { ids, changes } = await readJson(req);
+    if (!Array.isArray(ids) || !ids.length) return send(res, 400, { error: 'Select at least one record.' });
+    const update = {};
+    if (typeof changes?.paid === 'boolean') update.paid = changes.paid;
+    if (changes?.status !== undefined) {
+      if (!STATUSES.includes(changes.status)) return send(res, 400, { error: 'Unknown status.' });
+      update.status = changes.status;
+    }
+    if (!Object.keys(update).length) return send(res, 400, { error: 'Nothing to change.' });
+    const wanted = new Set(ids.map(String));
+    const now = new Date().toISOString();
+    let updated = 0;
+    for (const r of db.records) {
+      if (wanted.has(r.id)) {
+        Object.assign(r, update, { updatedAt: now });
+        updated++;
+      }
+    }
+    saveDb();
+    return send(res, 200, { updated });
   }
 
   const recordMatch = pathname.match(/^\/api\/records\/([\w-]+)$/);
