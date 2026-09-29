@@ -21,7 +21,7 @@ const ADMIN_PASS = process.env.ADMIN_PASS || '55555';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 
-export const FIELDS = ['client', 'platform', 'listing', 'postOn', 'review', 'imageUrl', 'postDate', 'posterName', 'reviewLink', 'status', 'paid'];
+export const FIELDS = ['client', 'platform', 'listing', 'postOn', 'review', 'imageUrl', 'postDate', 'posterName', 'postedAs', 'reviewLink', 'status', 'paid'];
 export const STATUSES = ['Pending', 'Posted', 'Live', 'Removed'];
 export const PLATFORMS = ['Google', 'Houzz', 'Angi', 'BuildZoom', 'HomeAdvisor', 'Facebook', 'BBB', 'Porch', 'Thumbtack', 'Networx'];
 
@@ -184,6 +184,14 @@ function money(v) {
 
 // Fields only the admin sees: whether the poster was paid, and the review's prices.
 const stripPrivate = ({ paid, clientPrice, posterPay, ...rest }) => rest;
+// Clients see the name a review was posted as, never which poster posted it.
+const stripForViewer = (r) => {
+  const { posterName, assignedAt, ...rest } = stripPrivate(r);
+  return rest;
+};
+
+// A review's Poster ID is the poster's username; older reviews may hold the poster's display name.
+const isPosterOf = (poster, value) => Boolean(value) && (sameName(poster.username, value) || sameName(poster.name, value));
 
 function cleanRecord(input) {
   const r = {};
@@ -231,7 +239,7 @@ function stampPrices(r) {
     if (price != null) r.clientPrice = price;
   }
   if (r.posterPay == null) {
-    const rate = db.posters.find((p) => sameName(p.name, r.posterName))?.ratePerReview;
+    const rate = db.posters.find((p) => isPosterOf(p, r.posterName))?.ratePerReview;
     if (rate != null) r.posterPay = rate;
   }
   return r;
@@ -398,7 +406,7 @@ async function handleApi(req, res, pathname) {
     const names = sessionCompanies(session);
     let records = db.records.filter((r) => names.some((n) => sameName(n, r.client)));
     // Whether the poster was paid is for the admin only.
-    records = records.map(stripPrivate);
+    records = records.map(session.role === 'viewer' ? stripForViewer : stripPrivate);
     return send(res, 200, { records, statuses: STATUSES, platforms: PLATFORMS, warrantyDays: WARRANTY_DAYS });
   }
 
@@ -419,10 +427,12 @@ async function handleApi(req, res, pathname) {
     const names = posterCompanies(session.username);
     if (!record || !names.some((n) => sameName(n, record.client))) return send(res, 404, { error: 'Record not found.' });
     const body = await readJson(req);
-    const next = cleanRecord({ ...record, posterName: body.posterName, reviewLink: body.reviewLink, status: body.status });
+    const next = cleanRecord({ ...record, postedAs: body.postedAs, reviewLink: body.reviewLink, status: body.status });
     // Marking a review posted starts its warranty today.
     const postDate = !isPosted(record.status) && isPosted(next.status) ? today() : record.postDate || next.postDate;
-    Object.assign(record, { posterName: next.posterName, reviewLink: next.reviewLink, status: next.status, postDate, updatedAt: new Date().toISOString() });
+    // The poster working on an unassigned review becomes its Poster ID.
+    const posterName = record.posterName || session.username;
+    Object.assign(record, { posterName, postedAs: next.postedAs, reviewLink: next.reviewLink, status: next.status, postDate, updatedAt: new Date().toISOString() });
     settle(record);
     saveDb();
     return send(res, 200, stripPrivate(record));
@@ -547,7 +557,7 @@ async function handleApi(req, res, pathname) {
       for (const r of db.records) {
         if (!isPosted(r.status)) continue;
         const company = db.companies.find((c) => c.id in companies && sameName(c.name, r.client));
-        const poster = db.posters.find((p) => p.id in posters && sameName(p.name, r.posterName));
+        const poster = db.posters.find((p) => p.id in posters && isPosterOf(p, r.posterName));
         if (company) r.clientPrice = company.pricePerReview;
         if (poster) r.posterPay = poster.ratePerReview;
         if (company || poster) updated++;

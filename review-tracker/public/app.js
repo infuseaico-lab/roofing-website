@@ -8,7 +8,8 @@ const COLUMNS = [
   ['review', 'Review'],
   ['imageUrl', 'Image URL'],
   ['postDate', 'Post Date'],
-  ['posterName', 'Poster Name'],
+  ['posterName', 'Poster ID'],
+  ['postedAs', 'Posted As'],
   ['reviewLink', 'Review Link'],
   ['status', 'Status'],
   ['paid', 'Paid'],
@@ -111,7 +112,7 @@ async function loadRecords() {
   fillSelect($('#filter-client'), clients, 'All clients');
   const names = [...new Set([...clients, ...state.companies.map((c) => c.name)])].sort((a, b) => a.localeCompare(b));
   $('#client-options').replaceChildren(...names.map((c) => new Option(c)));
-  $('#poster-options').replaceChildren(...state.posters.map((p) => new Option(p.name)));
+  $('#poster-options').replaceChildren(...state.posters.map((p) => new Option(p.name, p.username)));
   render();
   if (state.user && state.user.role !== 'admin') renderNotifications();
   if (state.user?.role === 'admin') {
@@ -170,7 +171,7 @@ function render() {
         reviewCell(r.review),
         linkCell(r.imageUrl, 'View ↗'),
         cell(formatDate(r.postDate), 'nowrap'),
-        cell(r.posterName),
+        postedAsCell(r, isAdmin || isPoster),
         linkCell(r.reviewLink),
         statusCell(r.status),
       );
@@ -369,6 +370,18 @@ function clientCell(r) {
   return td;
 }
 
+// The name the review is published under, with the Poster ID beneath for admin and posters.
+function postedAsCell(r, showPoster) {
+  const td = cell(r.postedAs);
+  if (showPoster && r.posterName) {
+    const sub = document.createElement('div');
+    sub.className = 'platform-tag';
+    sub.textContent = `by ${r.posterName}`;
+    td.append(sub);
+  }
+  return td;
+}
+
 function posterActionCell(r) {
   const td = document.createElement('td');
   td.className = 'row-actions';
@@ -510,6 +523,10 @@ HEADER_KEYS.scheduleddate = 'postOn';
 HEADER_KEYS.scheduled = 'postOn';
 HEADER_KEYS.date = 'postDate';
 HEADER_KEYS.poster = 'posterName';
+HEADER_KEYS.postername = 'posterName';
+HEADER_KEYS.reviewer = 'postedAs';
+HEADER_KEYS.reviewername = 'postedAs';
+HEADER_KEYS.postedunder = 'postedAs';
 HEADER_KEYS.link = 'reviewLink';
 HEADER_KEYS.image = 'imageUrl';
 HEADER_KEYS.images = 'imageUrl';
@@ -570,7 +587,9 @@ function exportCsv() {
     return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   // Only the admin exports the poster-paid column.
-  const cols = state.user?.role === 'admin' ? COLUMNS : COLUMNS.filter(([k]) => k !== 'paid');
+  // Clients never see which poster posted a review.
+  const hidden = state.user?.role === 'admin' ? [] : state.user?.role === 'poster' ? ['paid'] : ['paid', 'posterName'];
+  const cols = COLUMNS.filter(([k]) => !hidden.includes(k));
   const lines = [cols.map(([, l]) => l).join(',')];
   for (const r of filteredRecords()) {
     lines.push(cols.map(([k]) => esc(k === 'paid' ? (r.paid ? 'Yes' : 'No') : k === 'postDate' || k === 'postOn' ? formatDate(r[k]) : r[k])).join(','));
@@ -875,7 +894,7 @@ function renderPosters() {
       const tr = document.createElement('tr');
       const names = p.companyIds.map((id) => companyName.get(id)).filter(Boolean);
       const companies = cell(names.length ? names.join(', ') : 'No companies assigned', names.length ? '' : 'warn');
-      const posted = state.records.filter((r) => sameName(r.posterName, p.name) && (r.status === 'Posted' || r.status === 'Live')).length;
+      const posted = state.records.filter((r) => isPosterOf(p, r.posterName) && (r.status === 'Posted' || r.status === 'Live')).length;
       const edit = document.createElement('button');
       edit.className = 'btn small';
       edit.textContent = 'Edit';
@@ -998,7 +1017,7 @@ function openPostDialog(r) {
   $('#post-copy').hidden = !r.review;
   fillSelect($('#post-status'), state.statuses);
   $('#post-status').value = r.status;
-  $('#post-poster').value = r.posterName || state.user?.name || '';
+  $('#post-poster').value = r.postedAs || '';
   $('#post-link').value = r.reviewLink || '';
   $('#post-dialog').showModal();
 }
@@ -1007,7 +1026,7 @@ async function savePost(e) {
   e.preventDefault();
   const form = e.target;
   const body = {
-    posterName: form.elements.posterName.value,
+    postedAs: form.elements.postedAs.value,
     reviewLink: form.elements.reviewLink.value,
     status: form.elements.status.value,
   };
@@ -1039,7 +1058,9 @@ async function copyReview() {
 
 const isPostedStatus = (s) => s === 'Posted' || s === 'Live';
 const companyFor = (r) => state.companies.find((c) => sameName(c.name, r.client));
-const posterFor = (r) => state.posters.find((p) => sameName(p.name, r.posterName));
+// A review's Poster ID is the poster's username; older reviews may hold the poster's display name.
+const isPosterOf = (p, value) => Boolean(value) && (sameName(p.username, value) || sameName(p.name, value));
+const posterFor = (r) => state.posters.find((p) => isPosterOf(p, r.posterName));
 // A review's own locked-in price wins; otherwise the current company price / poster rate applies.
 const clientPriceOf = (r) => r.clientPrice ?? companyFor(r)?.pricePerReview ?? null;
 const posterPayOf = (r) => r.posterPay ?? posterFor(r)?.ratePerReview ?? null;
@@ -1126,7 +1147,7 @@ function renderStats() {
   const byPoster = new Map();
   for (const r of inScope) {
     if (!r.posterName && !r.paid) continue;
-    const key = posterFor(r)?.name ?? (r.posterName || 'No poster name');
+    const key = posterFor(r)?.name ?? (r.posterName || 'No poster ID');
     if (!byPoster.has(key)) byPoster.set(key, []);
     byPoster.get(key).push(r);
   }
@@ -1247,7 +1268,7 @@ function buildNotifications() {
   const recent = Date.now() - 14 * 86400000;
   for (const r of state.records) {
     if (r.status !== 'Pending') continue;
-    const mine = r.posterName && sameName(r.posterName, me);
+    const mine = r.posterName && isPosterOf({ username: state.user.username, name: me }, r.posterName);
     if (r.posterName && !mine) continue;
     const client = r.client || 'A client';
     const added = mine && r.assignedAt > (r.createdAt || '') ? r.assignedAt : r.createdAt;

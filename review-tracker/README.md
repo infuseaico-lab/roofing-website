@@ -10,14 +10,15 @@ npm start          # http://localhost:3000
 ## Logins
 
 - **Admin** (full access): `edygal` / `55555`. To change it, set the `ADMIN_USER` and `ADMIN_PASS` environment variables.
-- **Posters**: in the **Posters** tab, add each person who posts reviews, with a login and one or more companies. A poster sees the reviews of their companies (without the Paid column) and can only change **Poster Name**, **Review Link** and **Status**, using the **Update** button on each row. The server ignores any other field they send. Their Poster Name starts filled with their own name. Use **Edit** to change a poster's companies or password (leave it blank to keep it).
+- **Posters**: in the **Posters** tab, add each person who posts reviews, with a login and one or more companies. A poster sees the reviews of their companies (without the Paid column) and can only change **Posted As**, **Review Link** and **Status**, using the **Update** button on each row. The server ignores any other field they send. When they update an unassigned review, it gets their Poster ID automatically. Use **Edit** to change a poster's companies or password (leave it blank to keep it).
 - **Poster notifications**: posters have a bell in the top bar with a count of unread notifications. They are notified about Pending reviews that are open (no poster name) or carry their name: when a review is added, when the admin puts their name on it, when its **Post on** date arrives, and while it is overdue. Opening the panel marks everything read (saved on the server, so it carries across devices); clicking a notification opens that review's Update window. The poster's page checks for new work every minute.
 - **Client notifications**: viewers also have a bell. They are notified when a review for their company is first posted (set to Posted or Live) in the last 30 days; clicking the notification opens the review on Google when it has a review link. Reviews added with an older Posted-on date don't notify. Read state is saved per viewer, and the page checks for new posts every minute.
+- Clients (viewers) see the **Posted As** name, never the Poster ID.
 - **Viewers** (read-only): after signing in as admin, click **Viewer logins** in the top bar, create a username and password, and pick the one company that login may see. A viewer sees only records whose **Client** matches their company. If that company is deleted, the login sees nothing until you assign another. The server does this filtering, so other clients' records never reach their browser. Viewers can search, filter and export their own records but cannot change anything. Use **Edit** to change a login's company or password (leave the password blank to keep it). Renaming a company renames its records too, so viewers keep access. Removing a viewer signs them out right away.
 
 ## Records
 
-Each record has: Client, Platform (Google, Houzz, Angi, BuildZoom, HomeAdvisor, Facebook, BBB, Porch, Thumbtack or Networx; Google if left blank), Listing, Post On (the date you want it posted; Pending reviews past that date show as overdue), Review, Image URL (a link to the photos to post with the review), Posted On (called Post Date in CSV files), Poster Name, Review Link, Status (Pending, Posted, Live, Removed) and Paid (whether the poster was paid).
+Each record has: Client, Platform (Google, Houzz, Angi, BuildZoom, HomeAdvisor, Facebook, BBB, Porch, Thumbtack or Networx; Google if left blank), Listing, Post On (the date you want it posted; Pending reviews past that date show as overdue), Review, Image URL (a link to the photos to post with the review), Posted On (called Post Date in CSV files), Poster ID (the username of the poster doing the work), Posted As (the name the review is published under), Review Link, Status (Pending, Posted, Live, Removed) and Paid (whether the poster was paid).
 
 - **+ Add record** adds one record at a time.
 - **Import CSV** loads many at once. The first row must hold the column names above; `Paid` accepts Yes/No.
@@ -37,7 +38,7 @@ The **Statistics** tab shows, for a chosen period and company: reviews posted, *
 - *Charged* counts Posted and Live reviews at the client price. *Paid* counts reviews marked **Poster paid** (any status) at the poster pay. *Owed* counts Posted and Live reviews not yet marked Poster paid. Periods use each review's Post Date.
 - Set prices at the bottom of the tab: a price per review for each company (what the client is charged) and a rate per review for each poster (what they are paid).
 - When a review is posted, it keeps the prices in force at that moment, so later price changes only affect new reviews. Tick **Also update reviews already posted** to re-price existing ones, or change one review's **Client price** / **Poster pay** in its Edit window. Posters and viewers never see prices.
-- Poster pay is matched by the review's Poster Name, so keep it the same as the name in the Posters tab.
+- Poster pay and notifications are matched by the review's **Poster ID** (the poster's username; older reviews holding the poster's display name still match).
 
 ## Companies (admin only)
 
