@@ -15,7 +15,7 @@ npm start          # http://localhost:3000
 
 ## Records
 
-Each record has: Client, Listing, Pace, Review, Image URL (a link to the photos to post with the review), Post Date, Poster Name, Review Link, Status (Pending, Posted, Live, Removed) and Paid (whether the poster was paid).
+Each record has: Client, Listing, Post On (the date you want it posted; Pending reviews past that date show as overdue), Review, Image URL (a link to the photos to post with the review), Posted On (called Post Date in CSV files), Poster Name, Review Link, Status (Pending, Posted, Live, Removed) and Paid (whether the poster was paid).
 
 - **+ Add record** adds one record at a time.
 - **Import CSV** loads many at once. The first row must hold the column names above; `Paid` accepts Yes/No.

@@ -3,7 +3,7 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const COLUMNS = [
   ['client', 'Client'],
   ['listing', 'Listing'],
-  ['pace', 'Pace'],
+  ['postOn', 'Post On'],
   ['review', 'Review'],
   ['imageUrl', 'Image URL'],
   ['postDate', 'Post Date'],
@@ -145,7 +145,7 @@ function render() {
       tr.append(
         cell(r.client, 'strong'),
         cell(r.listing),
-        cell(r.pace),
+        postOnCell(r),
         reviewCell(r.review),
         linkCell(r.imageUrl, 'View ↗'),
         cell(formatDate(r.postDate), 'nowrap'),
@@ -323,6 +323,21 @@ function warrantyText(w) {
   return w.left === 0 ? 'Last day today' : days;
 }
 
+// The date the admin wants the review posted; flags Pending reviews that are due or late.
+function postOnCell(r) {
+  const td = cell(formatDate(r.postOn), 'nowrap');
+  if (r.status === 'Pending' && /^\d{4}-\d{2}-\d{2}$/.test(r.postOn || '')) {
+    const days = daysUntil(r.postOn);
+    if (days <= 0) {
+      const note = document.createElement('div');
+      note.className = days < 0 ? 'sub overdue' : 'sub due';
+      note.textContent = days < 0 ? `Overdue ${-days} day${days === -1 ? '' : 's'}` : 'Due today';
+      td.append(note);
+    }
+  }
+  return td;
+}
+
 function posterActionCell(r) {
   const td = document.createElement('td');
   td.className = 'row-actions';
@@ -458,7 +473,9 @@ function parseCsv(text) {
 }
 
 const HEADER_KEYS = Object.fromEntries(COLUMNS.map(([key, label]) => [label.toLowerCase().replace(/[^a-z]/g, ''), key]));
-HEADER_KEYS.place = 'pace';
+HEADER_KEYS.poston = 'postOn';
+HEADER_KEYS.scheduleddate = 'postOn';
+HEADER_KEYS.scheduled = 'postOn';
 HEADER_KEYS.date = 'postDate';
 HEADER_KEYS.poster = 'posterName';
 HEADER_KEYS.link = 'reviewLink';
@@ -495,6 +512,7 @@ async function previewImport() {
     const r = {};
     keys.forEach((k, i) => k && (r[k] = cells[i] ?? ''));
     if (r.postDate) r.postDate = normalizeDate(r.postDate);
+    if (r.postOn) r.postOn = normalizeDate(r.postOn);
     return r;
   });
   const labels = COLUMNS.filter(([k]) => matched.includes(k)).map(([, l]) => l);
@@ -895,6 +913,7 @@ function openPostDialog(r) {
   state.postingId = r.id;
   $('#post-client').textContent = r.client || '—';
   $('#post-listing').textContent = r.listing || '—';
+  $('#post-on').textContent = r.postOn ? formatDate(r.postOn) : 'No date set';
   $('#post-review').textContent = r.review || 'No review text.';
   const img = $('#post-image');
   const hasImage = /^https?:\/\//i.test(r.imageUrl || '');

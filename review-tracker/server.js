@@ -21,7 +21,7 @@ const ADMIN_PASS = process.env.ADMIN_PASS || '55555';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 
-export const FIELDS = ['client', 'listing', 'pace', 'review', 'imageUrl', 'postDate', 'posterName', 'reviewLink', 'status', 'paid'];
+export const FIELDS = ['client', 'listing', 'postOn', 'review', 'imageUrl', 'postDate', 'posterName', 'reviewLink', 'status', 'paid'];
 export const STATUSES = ['Pending', 'Posted', 'Live', 'Removed'];
 // Each posted review is guaranteed for this many days from its post date.
 const WARRANTY_DAYS = Number(process.env.WARRANTY_DAYS) || 30;
@@ -38,6 +38,10 @@ function loadDb() {
     db.viewers ??= [];
     db.companies ??= [];
     db.posters ??= [];
+    // "Pace" was replaced by a scheduled "Post on" date; carry over any pace that was a date.
+    for (const r of db.records) {
+      if (r.postOn === undefined) r.postOn = /^\d{4}-\d{2}-\d{2}$/.test(r.pace ?? '') ? r.pace : '';
+    }
     // Older data allowed several companies per viewer; each viewer now has exactly one.
     for (const v of db.viewers) {
       if (!('companyId' in v)) v.companyId = v.companyIds?.[0] ?? '';

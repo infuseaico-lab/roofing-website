@@ -90,10 +90,10 @@
               <th class="admin-only select-col"><input type="checkbox" id="select-all" aria-label="Select all shown records"></th>
               <th data-sort="client">Client</th>
               <th data-sort="listing">Listing</th>
-              <th data-sort="pace">Pace</th>
+              <th data-sort="postOn">Post on</th>
               <th data-sort="review">Review</th>
               <th>Images</th>
-              <th data-sort="postDate">Post date</th>
+              <th data-sort="postDate">Posted on</th>
               <th data-sort="posterName">Poster name</th>
               <th>Review link</th>
               <th data-sort="status">Status</th>
@@ -265,6 +265,7 @@
       <dl class="post-summary">
         <div><dt>Client</dt><dd id="post-client"></dd></div>
         <div><dt>Listing</dt><dd id="post-listing"></dd></div>
+        <div><dt>Post on</dt><dd id="post-on"></dd></div>
         <div class="span-2"><dt>Review to post</dt><dd><p id="post-review" class="post-review"></p>
           <button type="button" class="btn small" id="post-copy">Copy review text</button></dd></div>
         <div class="span-2"><dt>Warranty</dt><dd id="post-warranty"></dd></div>
@@ -310,8 +311,8 @@
       <div class="grid">
         <label>Client <input name="client" required list="client-options"></label>
         <label>Listing <input name="listing"></label>
-        <label>Pace <input name="pace"></label>
-        <label>Post date <input name="postDate" type="date"></label>
+        <label>Post on <input name="postOn" type="date"></label>
+        <label>Posted on <input name="postDate" type="date"></label>
         <label>Poster name <input name="posterName" list="poster-options"></label>
         <label>Status <select name="status"></select></label>
         <label class="span-2">Review link <input name="reviewLink" type="url" placeholder="https://"></label>
@@ -337,7 +338,7 @@
     <form id="import-form" method="dialog">
       <h2>Import from CSV</h2>
       <p class="muted">First row must be headers. Recognized columns:
-        Client, Listing, Pace, Review, Image URL, Post Date, Poster Name, Review Link, Status, Paid.
+        Client, Listing, Post On, Review, Image URL, Post Date, Poster Name, Review Link, Status, Paid.
         Paid (whether the poster was paid) accepts Yes/No. Export from Excel or Google Sheets as CSV.</p>
       <input id="import-file" type="file" accept=".csv,text/csv" required>
       <p id="import-preview" class="muted"></p>
