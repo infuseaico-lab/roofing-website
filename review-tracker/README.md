@@ -26,6 +26,15 @@ Each record has: Client, Listing, Pace, Review, Image URL (a link to the photos 
 
 **Paid** means whether the poster was paid for that review. Only the admin sees it; viewers and posters never receive it.
 
+## Statistics and prices (admin only)
+
+The **Statistics** tab shows, for a chosen period and company: reviews posted, **charged to clients**, **paid to posters**, **owed to posters** and **profit** (charged minus paid and owed), with breakdowns by company and by poster.
+
+- *Charged* counts Posted and Live reviews at the client price. *Paid* counts reviews marked **Poster paid** (any status) at the poster pay. *Owed* counts Posted and Live reviews not yet marked Poster paid. Periods use each review's Post Date.
+- Set prices at the bottom of the tab: a price per review for each company (what the client is charged) and a rate per review for each poster (what they are paid).
+- When a review is posted, it keeps the prices in force at that moment, so later price changes only affect new reviews. Tick **Also update reviews already posted** to re-price existing ones, or change one review's **Client price** / **Poster pay** in its Edit window. Posters and viewers never see prices.
+- Poster pay is matched by the review's Poster Name, so keep it the same as the name in the Posters tab.
+
 ## Companies (admin only)
 
 The **Companies** tab stores each company's name, listing URL, number of reviews ordered, start date, payment date and amount paid. It also shows how many of that company's reviews are live, by matching record **Client** names to the company name. Viewers never see this tab, and the server refuses company requests from viewer logins. When you add a record and pick a known company as the client, its listing URL fills in automatically.

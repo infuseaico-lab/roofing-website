@@ -154,6 +154,16 @@ function sessionCookie(req, token, maxAgeSec) {
 
 // ---------- records ----------
 
+// A money amount in dollars, or null when blank or invalid.
+function money(v) {
+  if (v === null || v === undefined || String(v).trim() === '') return null;
+  const n = Number.parseFloat(String(v).replace(/[$,\s]/g, ''));
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
+}
+
+// Fields only the admin sees: whether the poster was paid, and the review's prices.
+const stripPrivate = ({ paid, clientPrice, posterPay, ...rest }) => rest;
+
 function cleanRecord(input) {
   const r = {};
   for (const f of FIELDS) {
@@ -165,6 +175,8 @@ function cleanRecord(input) {
   }
   // A posted review needs a post date for its warranty to start.
   if (isPosted(r.status) && !r.postDate) r.postDate = today();
+  r.clientPrice = money(input?.clientPrice);
+  r.posterPay = money(input?.posterPay);
   const paid = input?.paid;
   r.paid = paid === true || /^(yes|y|true|1|paid)$/i.test(String(paid ?? '').trim());
   return r;
@@ -183,6 +195,21 @@ function cleanCompany(input) {
     amountPaid: Number.isFinite(amount) && amount >= 0 ? Math.round(amount * 100) / 100 : null,
     startDate: date(input?.startDate),
   };
+}
+
+// When a review is posted, lock in the current client price and poster rate so later
+// price changes don't rewrite past figures. Blank prices keep following the current rates.
+function stampPrices(r) {
+  if (!isPosted(r.status)) return r;
+  if (r.clientPrice == null) {
+    const price = db.companies.find((c) => sameName(c.name, r.client))?.pricePerReview;
+    if (price != null) r.clientPrice = price;
+  }
+  if (r.posterPay == null) {
+    const rate = db.posters.find((p) => sameName(p.name, r.posterName))?.ratePerReview;
+    if (rate != null) r.posterPay = rate;
+  }
+  return r;
 }
 
 const sameName = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
@@ -324,7 +351,7 @@ async function handleApi(req, res, pathname) {
     const names = sessionCompanies(session);
     let records = db.records.filter((r) => names.some((n) => sameName(n, r.client)));
     // Whether the poster was paid is for the admin only.
-    records = records.map(({ paid, ...r }) => r);
+    records = records.map(stripPrivate);
     return send(res, 200, { records, statuses: STATUSES, warrantyDays: WARRANTY_DAYS });
   }
 
@@ -339,9 +366,9 @@ async function handleApi(req, res, pathname) {
     // Marking a review posted starts its warranty today.
     const postDate = !isPosted(record.status) && isPosted(next.status) ? today() : record.postDate || next.postDate;
     Object.assign(record, { posterName: next.posterName, reviewLink: next.reviewLink, status: next.status, postDate, updatedAt: new Date().toISOString() });
+    stampPrices(record);
     saveDb();
-    const { paid, ...visible } = record;
-    return send(res, 200, visible);
+    return send(res, 200, stripPrivate(record));
   }
 
   if (!isAdmin) return send(res, 403, { error: 'Your login can’t do that.' });
@@ -349,7 +376,7 @@ async function handleApi(req, res, pathname) {
   if (pathname === '/api/records' && method === 'POST') {
     const body = await readJson(req);
     const now = new Date().toISOString();
-    const record = { id: crypto.randomUUID(), ...cleanRecord(body), createdAt: now, updatedAt: now };
+    const record = stampPrices({ id: crypto.randomUUID(), ...cleanRecord(body), createdAt: now, updatedAt: now });
     db.records.push(record);
     saveDb();
     return send(res, 201, record);
@@ -359,7 +386,7 @@ async function handleApi(req, res, pathname) {
     const { records } = await readJson(req);
     if (!Array.isArray(records)) return send(res, 400, { error: 'Expected a list of records.' });
     const now = new Date().toISOString();
-    const added = records.map((r) => ({ id: crypto.randomUUID(), ...cleanRecord(r), createdAt: now, updatedAt: now }));
+    const added = records.map((r) => stampPrices({ id: crypto.randomUUID(), ...cleanRecord(r), createdAt: now, updatedAt: now }));
     db.records.push(...added);
     saveDb();
     return send(res, 201, { added: added.length });
@@ -382,6 +409,7 @@ async function handleApi(req, res, pathname) {
       if (wanted.has(r.id)) {
         const startsWarranty = update.status && !isPosted(r.status) && isPosted(update.status);
         Object.assign(r, update, { updatedAt: now }, startsWarranty || (isPosted(r.status) && !r.postDate) ? { postDate: today() } : {});
+        stampPrices(r);
         updated++;
       }
     }
@@ -395,7 +423,7 @@ async function handleApi(req, res, pathname) {
     if (idx === -1) return send(res, 404, { error: 'Record not found.' });
     if (method === 'PUT') {
       const body = await readJson(req);
-      db.records[idx] = { ...db.records[idx], ...cleanRecord(body), updatedAt: new Date().toISOString() };
+      db.records[idx] = stampPrices({ ...db.records[idx], ...cleanRecord(body), updatedAt: new Date().toISOString() });
       saveDb();
       return send(res, 200, db.records[idx]);
     }
@@ -445,6 +473,26 @@ async function handleApi(req, res, pathname) {
     }
   }
 
+  // Prices: what each company is charged per review and what each poster is paid per review.
+  if (pathname === '/api/prices' && method === 'PUT') {
+    const { companies = {}, posters = {}, applyToPosted = false } = await readJson(req);
+    for (const c of db.companies) if (c.id in companies) c.pricePerReview = money(companies[c.id]);
+    for (const p of db.posters) if (p.id in posters) p.ratePerReview = money(posters[p.id]);
+    let updated = 0;
+    if (applyToPosted) {
+      for (const r of db.records) {
+        if (!isPosted(r.status)) continue;
+        const company = db.companies.find((c) => c.id in companies && sameName(c.name, r.client));
+        const poster = db.posters.find((p) => p.id in posters && sameName(p.name, r.posterName));
+        if (company) r.clientPrice = company.pricePerReview;
+        if (poster) r.posterPay = poster.ratePerReview;
+        if (company || poster) updated++;
+      }
+    }
+    saveDb();
+    return send(res, 200, { ok: true, updated });
+  }
+
   if (pathname === '/api/viewers' && method === 'GET') {
     return send(res, 200, {
       viewers: db.viewers.map((v) => ({ username: v.username, companyId: cleanCompanyId(v.companyId), createdAt: v.createdAt })),
@@ -491,8 +539,8 @@ async function handleApi(req, res, pathname) {
 
   if (pathname === '/api/posters' && method === 'GET') {
     return send(res, 200, {
-      posters: db.posters.map(({ id, name, username, companyIds, createdAt }) => ({
-        id, name, username, companyIds: cleanCompanyIds(companyIds), createdAt,
+      posters: db.posters.map(({ id, name, username, companyIds, ratePerReview, createdAt }) => ({
+        id, name, username, companyIds: cleanCompanyIds(companyIds), ratePerReview: ratePerReview ?? null, createdAt,
       })),
     });
   }

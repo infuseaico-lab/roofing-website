@@ -99,6 +99,7 @@ async function loadRecords() {
   if (state.user?.role === 'admin') {
     renderCompanies();
     renderPosters();
+    if (!$('#stats-panel').hidden) renderStats();
   }
 }
 
@@ -375,6 +376,8 @@ function openRecordDialog(record) {
       if (key === 'paid') input.checked = record.paid;
       else input.value = record[key] ?? '';
     }
+    form.elements.clientPrice.value = record.clientPrice ?? '';
+    form.elements.posterPay.value = record.posterPay ?? '';
   } else {
     form.elements.status.value = state.statuses[0] ?? '';
     const client = $('#filter-client').value;
@@ -395,6 +398,8 @@ async function saveRecord(e) {
   for (const [key] of COLUMNS) {
     body[key] = key === 'paid' ? form.elements.paid.checked : form.elements[key].value;
   }
+  body.clientPrice = form.elements.clientPrice.value;
+  body.posterPay = form.elements.posterPay.value;
   try {
     if (state.editingId) await api(`/api/records/${state.editingId}`, { method: 'PUT', body });
     else await api('/api/records', { method: 'POST', body });
@@ -640,6 +645,8 @@ function showTab(name) {
   $('#reviews-panel').hidden = name !== 'reviews';
   $('#companies-panel').hidden = name !== 'companies';
   $('#posters-panel').hidden = name !== 'posters';
+  $('#stats-panel').hidden = name !== 'stats';
+  if (name === 'stats') renderStats();
 }
 
 async function loadCompanies() {
@@ -939,6 +946,175 @@ async function copyReview() {
   }
 }
 
+// ---------- statistics (admin only) ----------
+
+const isPostedStatus = (s) => s === 'Posted' || s === 'Live';
+const companyFor = (r) => state.companies.find((c) => sameName(c.name, r.client));
+const posterFor = (r) => state.posters.find((p) => sameName(p.name, r.posterName));
+// A review's own locked-in price wins; otherwise the current company price / poster rate applies.
+const clientPriceOf = (r) => r.clientPrice ?? companyFor(r)?.pricePerReview ?? null;
+const posterPayOf = (r) => r.posterPay ?? posterFor(r)?.ratePerReview ?? null;
+
+function statsRange(period) {
+  const now = new Date();
+  const iso = (d) => d.toLocaleDateString('en-CA');
+  const y = now.getFullYear(), m = now.getMonth();
+  if (period === 'month') return [iso(new Date(y, m, 1)), iso(new Date(y, m + 1, 0))];
+  if (period === 'lastmonth') return [iso(new Date(y, m - 1, 1)), iso(new Date(y, m, 0))];
+  if (period === '30') return [iso(new Date(y, m, now.getDate() - 29)), iso(now)];
+  if (period === 'year') return [iso(new Date(y, 0, 1)), iso(new Date(y, 11, 31))];
+  return null;
+}
+
+function renderStats() {
+  const companySel = $('#stats-company');
+  fillSelect(companySel, [...state.companies].map((c) => c.name).sort((a, b) => a.localeCompare(b)), 'All companies');
+  const range = statsRange($('#stats-period').value);
+  $('#stats-range').textContent = range
+    ? `Reviews with a post date from ${formatDate(range[0])} to ${formatDate(range[1])}.`
+    : 'All reviews, whatever their post date.';
+
+  const inScope = state.records.filter((r) =>
+    (!companySel.value || sameName(r.client, companySel.value)) &&
+    (!range || (r.postDate >= range[0] && r.postDate <= range[1])));
+
+  // Charged: every Posted/Live review. Paid out: every review marked poster paid.
+  // Owed: Posted/Live reviews not yet marked poster paid.
+  const sum = (list, fn) => list.reduce((n, r) => n + (fn(r) ?? 0), 0);
+  const posted = inScope.filter((r) => isPostedStatus(r.status));
+  const paidList = inScope.filter((r) => r.paid);
+  const owedList = posted.filter((r) => !r.paid);
+  const charged = sum(posted, clientPriceOf);
+  const paidOut = sum(paidList, posterPayOf);
+  const owed = sum(owedList, posterPayOf);
+  const profit = charged - paidOut - owed;
+
+  $('#st-count').textContent = posted.length;
+  $('#st-charged').textContent = money(charged);
+  $('#st-paid').textContent = money(paidOut);
+  $('#st-owed').textContent = money(owed);
+  $('#st-profit').textContent = money(profit);
+  $('#st-profit').classList.toggle('negative', profit < 0);
+  $('#st-margin').textContent = charged > 0 ? `Profit · ${Math.round((profit / charged) * 100)}% margin` : 'Profit';
+
+  const noClient = posted.filter((r) => clientPriceOf(r) == null).length;
+  const noPoster = [...new Set([...posted, ...paidList])].filter((r) => posterPayOf(r) == null).length;
+  const missing = [];
+  if (noClient) missing.push(`${noClient} posted review${noClient === 1 ? ' has' : 's have'} no client price`);
+  if (noPoster) missing.push(`${noPoster} review${noPoster === 1 ? ' has' : 's have'} no poster pay`);
+  $('#st-missing').hidden = !missing.length;
+  const single = noClient + noPoster === 1;
+  $('#st-missing').textContent = missing.length ? `${missing.join(' and ')}, so ${single ? 'it counts' : 'they count'} as $0. Set prices below.` : '';
+
+  // By company
+  const byCompany = new Map();
+  for (const r of inScope) {
+    const key = companyFor(r)?.name ?? (r.client || 'No client');
+    if (!byCompany.has(key)) byCompany.set(key, []);
+    byCompany.get(key).push(r);
+  }
+  const companyRows = [...byCompany.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([name, list]) => {
+    const p = list.filter((r) => isPostedStatus(r.status));
+    const ch = sum(p, clientPriceOf);
+    const cost = sum(list.filter((r) => r.paid), posterPayOf) + sum(p.filter((r) => !r.paid), posterPayOf);
+    const price = state.companies.find((c) => c.name === name)?.pricePerReview;
+    return [name, price == null ? '—' : money(price), String(p.length), money(ch), money(cost), money(ch - cost), ch - cost < 0];
+  });
+  fillStatsTable('#stats-companies', companyRows, 'No reviews in this period.');
+
+  // By poster
+  const byPoster = new Map();
+  for (const r of inScope) {
+    if (!r.posterName && !r.paid) continue;
+    const key = posterFor(r)?.name ?? (r.posterName || 'No poster name');
+    if (!byPoster.has(key)) byPoster.set(key, []);
+    byPoster.get(key).push(r);
+  }
+  const posterRows = [...byPoster.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([name, list]) => {
+    const p = list.filter((r) => isPostedStatus(r.status));
+    const paid = sum(list.filter((r) => r.paid), posterPayOf);
+    const owe = sum(p.filter((r) => !r.paid), posterPayOf);
+    const rate = state.posters.find((x) => x.name === name)?.ratePerReview;
+    return [name, rate == null ? '—' : money(rate), String(p.length), money(paid + owe), money(paid), money(owe), false];
+  });
+  fillStatsTable('#stats-posters', posterRows, 'No posted reviews in this period.');
+
+  renderPriceInputs();
+}
+
+function fillStatsTable(sel, rows, emptyText) {
+  const tbody = $(`${sel} tbody`);
+  if (!rows.length) {
+    const tr = document.createElement('tr');
+    const td = cell(emptyText, 'muted');
+    td.colSpan = 6;
+    tr.append(td);
+    tbody.replaceChildren(tr);
+    return;
+  }
+  tbody.replaceChildren(
+    ...rows.map(([name, ...nums]) => {
+      const negative = nums.pop();
+      const tr = document.createElement('tr');
+      tr.append(cell(name, 'strong'), ...nums.map((n, i) => cell(n, i === nums.length - 1 && negative ? 'num negative' : 'num')));
+      return tr;
+    }),
+  );
+}
+
+function priceInput(name, id, value, group) {
+  const label = document.createElement('label');
+  label.className = 'price-row';
+  const span = document.createElement('span');
+  span.textContent = name;
+  const wrap = document.createElement('span');
+  wrap.className = 'money-input';
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.min = '0';
+  input.step = '0.01';
+  input.inputMode = 'decimal';
+  input.placeholder = 'Not set';
+  input.dataset.group = group;
+  input.dataset.id = id;
+  input.value = value ?? '';
+  input.setAttribute('aria-label', `${name} price per review`);
+  wrap.append('$', input);
+  label.append(span, wrap);
+  return label;
+}
+
+function renderPriceInputs() {
+  // Don't overwrite what the admin is typing.
+  if ($('#prices-form').contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+  const empty = (text) => Object.assign(document.createElement('p'), { className: 'muted', textContent: text });
+  const companies = [...state.companies].sort((a, b) => a.name.localeCompare(b.name));
+  const posters = [...state.posters].sort((a, b) => a.name.localeCompare(b.name));
+  $('#price-companies').replaceChildren(...(companies.length
+    ? companies.map((c) => priceInput(c.name, c.id, c.pricePerReview, 'companies'))
+    : [empty('Add companies in the Companies tab.')]));
+  $('#price-posters').replaceChildren(...(posters.length
+    ? posters.map((p) => priceInput(p.name, p.id, p.ratePerReview, 'posters'))
+    : [empty('Add posters in the Posters tab.')]));
+}
+
+async function savePrices(e) {
+  e.preventDefault();
+  const body = { companies: {}, posters: {}, applyToPosted: $('#prices-apply').checked };
+  for (const input of e.target.querySelectorAll('input[data-group]')) body[input.dataset.group][input.dataset.id] = input.value;
+  if (body.applyToPosted && !(await confirmAction('Replace the prices on every review already posted for these companies and posters? This changes past totals.', 'Update all'))) return;
+  try {
+    const { updated } = await api('/api/prices', { method: 'PUT', body });
+    $('#prices-apply').checked = false;
+    document.activeElement?.blur();
+    toast(body.applyToPosted ? `Prices saved and applied to ${updated} posted review${updated === 1 ? '' : 's'}` : 'Prices saved');
+    await Promise.all([loadCompanies(), loadPosters()]);
+    await loadRecords();
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
 // ---------- wiring ----------
 
 $('#login-form').addEventListener('submit', async (e) => {
@@ -996,6 +1172,9 @@ $('#bulk-clear').addEventListener('click', () => {
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
 $('#add-company-btn').addEventListener('click', () => openCompanyDialog(null));
 $('#add-poster-btn').addEventListener('click', () => openPosterDialog(null));
+$('#stats-period').addEventListener('input', renderStats);
+$('#stats-company').addEventListener('input', renderStats);
+$('#prices-form').addEventListener('submit', savePrices);
 $('#poster-form').addEventListener('submit', savePoster);
 $('#post-form').addEventListener('submit', savePost);
 $('#post-copy').addEventListener('click', copyReview);

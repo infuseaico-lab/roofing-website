@@ -40,6 +40,7 @@
       <button class="tab" data-tab="reviews" aria-current="page">Reviews</button>
       <button class="tab" data-tab="companies">Companies</button>
       <button class="tab" data-tab="posters">Posters</button>
+      <button class="tab" data-tab="stats">Statistics</button>
     </nav>
 
     <main class="page" id="reviews-panel">
@@ -167,6 +168,73 @@
         <p id="posters-empty" class="empty" hidden></p>
       </div>
     </main>
+
+    <main class="page admin-only" id="stats-panel" hidden>
+      <section class="toolbar">
+        <div class="filters">
+          <select id="stats-period" aria-label="Period">
+            <option value="month">This month</option>
+            <option value="lastmonth">Last month</option>
+            <option value="30">Last 30 days</option>
+            <option value="year">This year</option>
+            <option value="all">All time</option>
+          </select>
+          <select id="stats-company" aria-label="Company"><option value="">All companies</option></select>
+        </div>
+        <p class="muted panel-note" id="stats-range"></p>
+      </section>
+
+      <section class="stats" aria-label="Money summary">
+        <div class="stat"><span class="stat-num" id="st-count">0</span><span class="stat-label">Reviews posted</span></div>
+        <div class="stat"><span class="stat-num" id="st-charged">$0</span><span class="stat-label">Charged to clients</span></div>
+        <div class="stat"><span class="stat-num" id="st-paid">$0</span><span class="stat-label">Paid to posters</span></div>
+        <div class="stat"><span class="stat-num" id="st-owed">$0</span><span class="stat-label">Owed to posters</span></div>
+        <div class="stat stat-profit"><span class="stat-num" id="st-profit">$0</span><span class="stat-label" id="st-margin">Profit</span></div>
+      </section>
+      <p class="warranty-note" id="st-missing" hidden></p>
+
+      <h2 class="section-title">By company</h2>
+      <div class="table-wrap">
+        <table id="stats-companies">
+          <thead><tr>
+            <th>Company</th><th class="num">Price / review</th><th class="num">Reviews posted</th>
+            <th class="num">Charged</th><th class="num">Poster cost</th><th class="num">Profit</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <h2 class="section-title">By poster</h2>
+      <div class="table-wrap">
+        <table id="stats-posters">
+          <thead><tr>
+            <th>Poster</th><th class="num">Rate / review</th><th class="num">Reviews posted</th>
+            <th class="num">Earned</th><th class="num">Paid</th><th class="num">Owed</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <h2 class="section-title">Prices</h2>
+      <form id="prices-form" class="prices">
+        <p class="muted">Prices are per review. A review keeps the prices it had when it was posted, so changing a price here
+          affects reviews posted from now on. To change one review's prices, open it with <strong>Edit</strong>.</p>
+        <div class="prices-grid">
+          <fieldset>
+            <legend>Charged to client, per company</legend>
+            <div id="price-companies" class="price-list"></div>
+          </fieldset>
+          <fieldset>
+            <legend>Paid to poster, per poster</legend>
+            <div id="price-posters" class="price-list"></div>
+          </fieldset>
+        </div>
+        <label class="check"><input type="checkbox" id="prices-apply"> Also update reviews already posted with these prices</label>
+        <div class="dialog-actions">
+          <button type="submit" class="btn primary">Save prices</button>
+        </div>
+      </form>
+    </main>
   </div>
 
   <!-- Add / edit poster -->
@@ -249,6 +317,8 @@
         <label class="span-2">Review link <input name="reviewLink" type="url" placeholder="https://"></label>
         <label class="span-2">Review <textarea name="review" rows="4"></textarea></label>
         <label class="span-2">Image URL <input name="imageUrl" type="url" placeholder="https:// link to the photos to post with the review"></label>
+        <label>Client price ($) <input name="clientPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Company price"></label>
+        <label>Poster pay ($) <input name="posterPay" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Poster rate"></label>
         <label class="check"><input name="paid" type="checkbox"> Poster paid</label>
       </div>
       <datalist id="client-options"></datalist>
