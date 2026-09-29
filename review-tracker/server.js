@@ -238,7 +238,12 @@ function sessionCompanies(session) {
 
 function me(session) {
   const out = { username: session.username, role: session.role };
-  if (session.role === 'poster') out.name = db.posters.find((p) => p.username === session.username)?.name || session.username;
+  if (session.role === 'poster') {
+    const poster = db.posters.find((p) => p.username === session.username);
+    out.name = poster?.name || session.username;
+    // Notifications newer than this are unread. New posters start from when they were added.
+    out.notificationsSeenAt = poster?.notificationsSeenAt || poster?.createdAt || new Date(0).toISOString();
+  }
   if (session.role !== 'admin') out.companies = sessionCompanies(session);
   return out;
 }
@@ -359,6 +364,15 @@ async function handleApi(req, res, pathname) {
     return send(res, 200, { records, statuses: STATUSES, warrantyDays: WARRANTY_DAYS });
   }
 
+  // A poster opened their notifications: everything up to now is read.
+  if (pathname === '/api/notifications/seen' && method === 'POST' && session.role === 'poster') {
+    const poster = db.posters.find((p) => p.username === session.username);
+    if (!poster) return send(res, 404, { error: 'Poster not found.' });
+    poster.notificationsSeenAt = new Date().toISOString();
+    saveDb();
+    return send(res, 200, { notificationsSeenAt: poster.notificationsSeenAt });
+  }
+
   // Posters update only the posting fields, and only on their companies' records.
   const patchMatch = pathname.match(/^\/api\/records\/([\w-]+)$/);
   if (patchMatch && method === 'PATCH' && session.role === 'poster') {
@@ -381,6 +395,7 @@ async function handleApi(req, res, pathname) {
     const body = await readJson(req);
     const now = new Date().toISOString();
     const record = stampPrices({ id: crypto.randomUUID(), ...cleanRecord(body), createdAt: now, updatedAt: now });
+    if (record.posterName) record.assignedAt = now;
     db.records.push(record);
     saveDb();
     return send(res, 201, record);
@@ -391,6 +406,7 @@ async function handleApi(req, res, pathname) {
     if (!Array.isArray(records)) return send(res, 400, { error: 'Expected a list of records.' });
     const now = new Date().toISOString();
     const added = records.map((r) => stampPrices({ id: crypto.randomUUID(), ...cleanRecord(r), createdAt: now, updatedAt: now }));
+    for (const r of added) if (r.posterName) r.assignedAt = now;
     db.records.push(...added);
     saveDb();
     return send(res, 201, { added: added.length });
@@ -427,7 +443,12 @@ async function handleApi(req, res, pathname) {
     if (idx === -1) return send(res, 404, { error: 'Record not found.' });
     if (method === 'PUT') {
       const body = await readJson(req);
-      db.records[idx] = stampPrices({ ...db.records[idx], ...cleanRecord(body), updatedAt: new Date().toISOString() });
+      const before = db.records[idx];
+      const now = new Date().toISOString();
+      db.records[idx] = stampPrices({ ...before, ...cleanRecord(body), updatedAt: now });
+      // Giving a review to a (different) poster notifies them.
+      const after = db.records[idx];
+      if (after.posterName && !sameName(after.posterName, before.posterName)) after.assignedAt = now;
       saveDb();
       return send(res, 200, db.records[idx]);
     }

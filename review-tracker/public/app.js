@@ -27,6 +27,8 @@ const state = {
   posters: [],
   editingPosterId: null,
   postingId: null,
+  seenAt: '',
+  pollTimer: null,
   selected: new Set(),
 };
 
@@ -52,6 +54,9 @@ async function api(path, { method = 'GET', body } = {}) {
 
 function showLogin() {
   state.user = null;
+  clearInterval(state.pollTimer);
+  $('#notif-panel').hidden = true;
+  document.title = 'Reputation Pilot';
   $('#app-view').hidden = true;
   $('#login-view').hidden = false;
   $('#login-form').reset();
@@ -62,6 +67,14 @@ async function showApp(user) {
   state.user = user;
   document.body.classList.toggle('is-admin', user.role === 'admin');
   document.body.classList.toggle('is-poster', user.role === 'poster');
+  state.seenAt = user.notificationsSeenAt || '';
+  clearInterval(state.pollTimer);
+  // Posters get new tasks and due dates without reloading the page.
+  if (user.role === 'poster') {
+    state.pollTimer = setInterval(() => {
+      if (document.visibilityState === 'visible' && state.user) loadRecords().catch(() => {});
+    }, 60000);
+  }
   $('#who').textContent =
     user.role === 'admin' ? `${user.username} · Admin`
     : user.role === 'poster' ? `${user.name} · Poster`
@@ -96,6 +109,7 @@ async function loadRecords() {
   $('#client-options').replaceChildren(...names.map((c) => new Option(c)));
   $('#poster-options').replaceChildren(...state.posters.map((p) => new Option(p.name)));
   render();
+  if (state.user?.role === 'poster') renderNotifications();
   if (state.user?.role === 'admin') {
     renderCompanies();
     renderPosters();
@@ -1134,6 +1148,110 @@ async function savePrices(e) {
   }
 }
 
+// ---------- poster notifications ----------
+
+// A poster is notified about Pending reviews that are open or assigned to them:
+// when the review is added or assigned, when its Post on date arrives, and while it is overdue.
+function buildNotifications() {
+  const me = state.user?.name;
+  const items = [];
+  const localMidnight = (iso) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return new Date(y, m - 1, d).toISOString();
+  };
+  const recent = Date.now() - 14 * 86400000;
+  for (const r of state.records) {
+    if (r.status !== 'Pending') continue;
+    const mine = r.posterName && sameName(r.posterName, me);
+    if (r.posterName && !mine) continue;
+    const client = r.client || 'A client';
+    const added = mine && r.assignedAt > (r.createdAt || '') ? r.assignedAt : r.createdAt;
+    const isNew = added && new Date(added).getTime() > recent;
+    const hasDate = /^\d{4}-\d{2}-\d{2}$/.test(r.postOn || '');
+    const days = hasDate ? daysUntil(r.postOn) : 1;
+    if (!isNew && days > 0) continue;
+    // One notification per review: its due state if the date has come, otherwise that it is new.
+    const what = mine ? 'review assigned to you' : 'new review to post';
+    const times = [isNew ? added : '', days <= 0 ? localMidnight(r.postOn) : ''];
+    items.push({
+      r,
+      time: times.sort().pop(),
+      kind: days < 0 ? 'overdue' : days === 0 ? 'due' : 'new',
+      title: days < 0 ? `${client}: review overdue` : days === 0 ? `${client}: review due today` : `${client}: ${what}`,
+      sub: [
+        days < 0 ? `Was due ${formatDate(r.postOn)} · ${-days} day${days === -1 ? '' : 's'} late`
+          : hasDate ? `Post on ${formatDate(r.postOn)}` : 'No post date set',
+        days <= 0 && isNew ? (mine ? 'Assigned to you' : 'New') : '',
+      ].filter(Boolean).join(' · '),
+    });
+  }
+  for (const n of items) n.unread = n.time > state.seenAt;
+  return items.sort((a, b) => (b.unread - a.unread) || b.time.localeCompare(a.time));
+}
+
+function renderNotifications() {
+  const items = buildNotifications();
+  const unread = items.filter((n) => n.unread).length;
+  const badge = $('#notif-count');
+  badge.hidden = unread === 0;
+  badge.textContent = unread > 9 ? '9+' : String(unread);
+  $('#notif-btn').setAttribute('aria-label', unread ? `Notifications, ${unread} unread` : 'Notifications');
+  document.title = unread ? `(${unread}) Reputation Pilot` : 'Reputation Pilot';
+  $('#notif-summary').textContent = unread ? `${unread} new` : '';
+
+  const list = $('#notif-list');
+  if (!items.length) {
+    const li = document.createElement('li');
+    li.className = 'notif-empty';
+    li.textContent = 'Nothing to post right now. New reviews and due dates will show up here.';
+    list.replaceChildren(li);
+    return;
+  }
+  list.replaceChildren(
+    ...items.map((n) => {
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `notif-item kind-${n.kind}${n.unread ? ' unread' : ''}`;
+      const title = document.createElement('span');
+      title.className = 'notif-title';
+      title.textContent = n.title;
+      const sub = document.createElement('span');
+      sub.className = 'notif-sub';
+      sub.textContent = n.sub;
+      btn.append(title, sub);
+      btn.addEventListener('click', () => {
+        closeNotifications();
+        openPostDialog(n.r);
+      });
+      li.append(btn);
+      return li;
+    }),
+  );
+}
+
+async function openNotifications() {
+  renderNotifications();
+  $('#notif-panel').hidden = false;
+  $('#notif-btn').setAttribute('aria-expanded', 'true');
+  // Opening the panel marks everything as read; the list keeps its highlights until it closes.
+  if (buildNotifications().some((n) => n.unread)) {
+    try {
+      const { notificationsSeenAt } = await api('/api/notifications/seen', { method: 'POST', body: {} });
+      state.seenAt = notificationsSeenAt;
+      $('#notif-count').hidden = true;
+      document.title = 'Reputation Pilot';
+    } catch {}
+  }
+}
+
+function closeNotifications() {
+  if ($('#notif-panel').hidden) return;
+  $('#notif-panel').hidden = true;
+  $('#notif-btn').setAttribute('aria-expanded', 'false');
+  renderNotifications();
+}
+
 // ---------- wiring ----------
 
 $('#login-form').addEventListener('submit', async (e) => {
@@ -1173,6 +1291,16 @@ document.querySelectorAll('th[data-sort]').forEach((th) =>
 );
 
 $('#add-btn').addEventListener('click', () => openRecordDialog(null));
+$('#notif-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  $('#notif-panel').hidden ? openNotifications() : closeNotifications();
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.notif')) closeNotifications();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeNotifications();
+});
 $('#select-all').addEventListener('change', (e) => {
   for (const r of filteredRecords()) e.target.checked ? state.selected.add(r.id) : state.selected.delete(r.id);
   render();
