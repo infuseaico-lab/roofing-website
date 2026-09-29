@@ -11,6 +11,15 @@
         ],
         "createdAt": "2026-09-29T04:48:01.611Z",
         "reason": "Claude: Roboto is only a system-ui fallback in the separate review-tracker app's stack; no webfont is loaded and the roofing site's DESIGN.md does not govern this app"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "review-tracker/public/index.html"
+        ],
+        "createdAt": "2026-09-29T16:29:50.212Z",
+        "reason": "Claude: .table-wrap holds tables whose th/td carry 10px padding; rows are filled by JS so the static scan sees the wrapper as flush"
       }
     ]
   }
