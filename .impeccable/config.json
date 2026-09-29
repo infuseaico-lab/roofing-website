@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "roboto",
+        "files": [
+          "review-tracker/public/styles.css"
+        ],
+        "createdAt": "2026-09-29T04:48:01.611Z",
+        "reason": "Claude: Roboto is only a system-ui fallback in the separate review-tracker app's stack; no webfont is loaded and the roofing site's DESIGN.md does not govern this app"
+      }
+    ]
+  }
+}
