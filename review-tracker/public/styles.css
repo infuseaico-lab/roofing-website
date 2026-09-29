@@ -172,6 +172,10 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; white-sp
 .status-posted { background: var(--posted-bg); color: var(--posted-ink); }
 .status-pending { background: var(--pending-bg); color: var(--pending-ink); }
 .status-removed { background: var(--removed-bg); color: var(--removed-ink); }
+.warranty-active { background: var(--live-bg); color: var(--live-ink); }
+.warranty-claim { background: var(--removed-bg); color: var(--removed-ink); }
+.warranty-expired { background: var(--neutral-bg); color: var(--muted); }
+td .sub { margin-top: 4px; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .paid { background: var(--live-bg); color: var(--live-ink); }
 .unpaid { background: var(--neutral-bg); color: var(--muted); }
 

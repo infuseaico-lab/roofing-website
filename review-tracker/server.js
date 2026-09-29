@@ -23,6 +23,11 @@ const MAX_BODY_BYTES = 5 * 1024 * 1024;
 
 export const FIELDS = ['client', 'listing', 'pace', 'review', 'imageUrl', 'postDate', 'posterName', 'reviewLink', 'status', 'paid'];
 export const STATUSES = ['Pending', 'Posted', 'Live', 'Removed'];
+// Each posted review is guaranteed for this many days from its post date.
+const WARRANTY_DAYS = Number(process.env.WARRANTY_DAYS) || 30;
+
+const isPosted = (status) => status === 'Posted' || status === 'Live';
+const today = () => new Date().toLocaleDateString('en-CA');
 
 // ---------- storage ----------
 
@@ -158,6 +163,8 @@ function cleanRecord(input) {
   if (!STATUSES.includes(r.status)) {
     r.status = STATUSES.find((s) => s.toLowerCase() === r.status.toLowerCase()) || 'Pending';
   }
+  // A posted review needs a post date for its warranty to start.
+  if (isPosted(r.status) && !r.postDate) r.postDate = today();
   const paid = input?.paid;
   r.paid = paid === true || /^(yes|y|true|1|paid)$/i.test(String(paid ?? '').trim());
   return r;
@@ -313,12 +320,12 @@ async function handleApi(req, res, pathname) {
   }
 
   if (pathname === '/api/records' && method === 'GET') {
-    if (isAdmin) return send(res, 200, { records: db.records, statuses: STATUSES });
+    if (isAdmin) return send(res, 200, { records: db.records, statuses: STATUSES, warrantyDays: WARRANTY_DAYS });
     const names = sessionCompanies(session);
     let records = db.records.filter((r) => names.some((n) => sameName(n, r.client)));
     // Whether the poster was paid is for the admin only.
     records = records.map(({ paid, ...r }) => r);
-    return send(res, 200, { records, statuses: STATUSES });
+    return send(res, 200, { records, statuses: STATUSES, warrantyDays: WARRANTY_DAYS });
   }
 
   // Posters update only the posting fields, and only on their companies' records.
@@ -329,7 +336,9 @@ async function handleApi(req, res, pathname) {
     if (!record || !names.some((n) => sameName(n, record.client))) return send(res, 404, { error: 'Record not found.' });
     const body = await readJson(req);
     const next = cleanRecord({ ...record, posterName: body.posterName, reviewLink: body.reviewLink, status: body.status });
-    Object.assign(record, { posterName: next.posterName, reviewLink: next.reviewLink, status: next.status, updatedAt: new Date().toISOString() });
+    // Marking a review posted starts its warranty today.
+    const postDate = !isPosted(record.status) && isPosted(next.status) ? today() : record.postDate || next.postDate;
+    Object.assign(record, { posterName: next.posterName, reviewLink: next.reviewLink, status: next.status, postDate, updatedAt: new Date().toISOString() });
     saveDb();
     const { paid, ...visible } = record;
     return send(res, 200, visible);
@@ -371,7 +380,8 @@ async function handleApi(req, res, pathname) {
     let updated = 0;
     for (const r of db.records) {
       if (wanted.has(r.id)) {
-        Object.assign(r, update, { updatedAt: now });
+        const startsWarranty = update.status && !isPosted(r.status) && isPosted(update.status);
+        Object.assign(r, update, { updatedAt: now }, startsWarranty || (isPosted(r.status) && !r.postDate) ? { postDate: today() } : {});
         updated++;
       }
     }

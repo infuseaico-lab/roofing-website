@@ -47,6 +47,7 @@
         <div class="stat"><span class="stat-num" id="stat-total">0</span><span class="stat-label">Total reviews</span></div>
         <div class="stat"><span class="stat-num" id="stat-live">0</span><span class="stat-label">Live</span></div>
         <div class="stat"><span class="stat-num" id="stat-pending">0</span><span class="stat-label">Pending / posted</span></div>
+        <div class="stat editor-only"><span class="stat-num" id="stat-warranty">0</span><span class="stat-label">Under warranty</span></div>
         <div class="stat admin-only"><span class="stat-num" id="stat-unpaid">0</span><span class="stat-label">Posters unpaid</span></div>
       </section>
 
@@ -55,6 +56,12 @@
           <input id="search" type="search" placeholder="Search client, listing, poster, review…" aria-label="Search">
           <select id="filter-client" aria-label="Client"><option value="">All clients</option></select>
           <select id="filter-status" aria-label="Status"><option value="">All statuses</option></select>
+          <select id="filter-warranty" aria-label="Warranty" class="editor-only">
+            <option value="">Any warranty</option>
+            <option value="active">Under warranty</option>
+            <option value="claim">Removed in warranty</option>
+            <option value="expired">Warranty expired</option>
+          </select>
           <select id="filter-paid" aria-label="Poster paid" class="admin-only">
             <option value="">Any payment</option>
             <option value="yes">Poster paid</option>
@@ -90,6 +97,7 @@
               <th data-sort="posterName">Poster name</th>
               <th>Review link</th>
               <th data-sort="status">Status</th>
+              <th data-sort="_warrantyEnd" class="editor-only">Warranty</th>
               <th data-sort="paid" class="admin-only">Poster paid</th>
               <th class="editor-only"><span class="sr-only">Actions</span></th>
             </tr>
@@ -193,6 +201,7 @@
         <div><dt>Listing</dt><dd id="post-listing"></dd></div>
         <div class="span-2"><dt>Review to post</dt><dd><p id="post-review" class="post-review"></p>
           <button type="button" class="btn small" id="post-copy">Copy review text</button></dd></div>
+        <div class="span-2"><dt>Warranty</dt><dd id="post-warranty"></dd></div>
         <div class="span-2" id="post-image-row"><dt>Images to post</dt><dd><a id="post-image" target="_blank" rel="noopener noreferrer"></a></dd></div>
       </dl>
       <div class="grid">

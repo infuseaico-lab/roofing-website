@@ -78,7 +78,12 @@ async function showApp(user) {
 }
 
 async function loadRecords() {
-  const { records, statuses } = await api('/api/records');
+  const { records, statuses, warrantyDays } = await api('/api/records');
+  state.warrantyDays = warrantyDays || 30;
+  for (const r of records) {
+    r._warranty = warrantyInfo(r);
+    r._warrantyEnd = r._warranty?.end ?? '';
+  }
   state.records = records;
   state.statuses = statuses;
   const ids = new Set(records.map((r) => r.id));
@@ -111,11 +116,13 @@ function filteredRecords() {
   const client = $('#filter-client').value;
   const status = $('#filter-status').value;
   const paid = $('#filter-paid').value;
+  const warranty = $('#filter-warranty').value;
   const { key, dir } = state.sort;
   return state.records
     .filter((r) => !client || r.client === client)
     .filter((r) => !status || r.status === status)
     .filter((r) => !paid || (paid === 'yes') === r.paid)
+    .filter((r) => !warranty || r._warranty?.kind === warranty)
     .filter((r) => !q || COLUMNS.some(([k]) => String(r[k] ?? '').toLowerCase().includes(q)))
     .sort((a, b) => {
       const av = a[key] ?? '';
@@ -146,6 +153,7 @@ function render() {
         linkCell(r.reviewLink),
         statusCell(r.status),
       );
+      if (isAdmin || isPoster) tr.append(warrantyCell(r._warranty));
       if (isAdmin) tr.append(paidCell(r.paid));
       if (isAdmin) tr.append(actionsCell(r));
       if (isPoster) tr.append(posterActionCell(r));
@@ -174,6 +182,7 @@ function render() {
   $('#stat-total').textContent = scope.length;
   $('#stat-live').textContent = scope.filter((r) => r.status === 'Live').length;
   $('#stat-pending').textContent = scope.filter((r) => r.status === 'Pending' || r.status === 'Posted').length;
+  $('#stat-warranty').textContent = scope.filter((r) => r._warranty?.kind === 'active').length;
   $('#stat-unpaid').textContent = scope.filter((r) => !r.paid).length;
   if (isAdmin) updateBulkBar();
 }
@@ -285,6 +294,55 @@ async function bulkUpdate(changes, label) {
   }
 }
 
+// ---------- warranty ----------
+
+const addDays = (iso, n) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d + n).toLocaleDateString('en-CA');
+};
+const daysUntil = (iso) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  const now = new Date();
+  return Math.round((new Date(y, m - 1, d) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+};
+
+// Warranty runs for warrantyDays from the post date, inclusive of the last day.
+// kind: 'active' (posted, still covered), 'claim' (removed while covered, needs replacing), 'expired'.
+function warrantyInfo(r) {
+  const posted = r.status === 'Posted' || r.status === 'Live';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(r.postDate || '') || (!posted && r.status !== 'Removed')) return null;
+  const end = addDays(r.postDate, state.warrantyDays);
+  const left = daysUntil(end);
+  if (left < 0) return { kind: 'expired', end, left };
+  return { kind: posted ? 'active' : 'claim', end, left };
+}
+
+function warrantyText(w) {
+  if (!w) return 'Starts when posted';
+  const days = `${w.left} day${w.left === 1 ? '' : 's'} left`;
+  if (w.kind === 'expired') return `Expired ${formatDate(w.end)}`;
+  if (w.kind === 'claim') return `Removed in warranty · ${days}`;
+  return w.left === 0 ? 'Last day today' : days;
+}
+
+function warrantyCell(w) {
+  const td = document.createElement('td');
+  if (!w) {
+    td.className = 'muted';
+    td.textContent = '—';
+    return td;
+  }
+  const pill = document.createElement('span');
+  pill.className = `pill warranty-${w.kind}`;
+  pill.textContent = w.kind === 'active' ? 'Under warranty' : w.kind === 'claim' ? 'Replace' : 'Expired';
+  const note = document.createElement('div');
+  note.className = 'sub';
+  note.textContent = w.kind === 'expired' ? formatDate(w.end) : `${w.left} day${w.left === 1 ? '' : 's'} left · ends ${formatDate(w.end)}`;
+  td.append(pill, note);
+  td.title = warrantyText(w);
+  return td;
+}
+
 function posterActionCell(r) {
   const td = document.createElement('td');
   td.className = 'row-actions';
@@ -339,7 +397,6 @@ function openRecordDialog(record) {
       else input.value = record[key] ?? '';
     }
   } else {
-    form.elements.postDate.value = new Date().toLocaleDateString('en-CA');
     form.elements.status.value = state.statuses[0] ?? '';
     const client = $('#filter-client').value;
     if (client) form.elements.client.value = client;
@@ -853,6 +910,10 @@ function openPostDialog(r) {
   img.href = hasImage ? r.imageUrl : '#';
   img.textContent = r.imageUrl || '';
   $('#post-image-row').hidden = !r.imageUrl;
+  const w = r._warranty;
+  $('#post-warranty').textContent = w
+    ? `${warrantyText(w)} (${w.kind === 'expired' ? 'ended' : 'ends'} ${formatDate(w.end)})`
+    : `Starts when you mark it Posted or Live, and lasts ${state.warrantyDays} days.`;
   img.toggleAttribute('aria-disabled', !hasImage);
   $('#post-copy').hidden = !r.review;
   fillSelect($('#post-status'), state.statuses);
@@ -920,7 +981,7 @@ $('#logout').addEventListener('click', async () => {
   showLogin();
 });
 
-['#search', '#filter-client', '#filter-status', '#filter-paid'].forEach((sel) =>
+['#search', '#filter-client', '#filter-status', '#filter-paid', '#filter-warranty'].forEach((sel) =>
   $(sel).addEventListener('input', render),
 );
 
