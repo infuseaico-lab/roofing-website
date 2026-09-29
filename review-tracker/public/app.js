@@ -149,8 +149,13 @@ function cell(text, cls) {
 }
 
 function reviewCell(text) {
-  const td = cell(text, 'review');
-  td.title = text || '';
+  const td = document.createElement('td');
+  td.className = 'review';
+  const div = document.createElement('div');
+  div.className = 'clamp';
+  div.textContent = text || '';
+  div.title = text || '';
+  td.append(div);
   return td;
 }
 
@@ -217,6 +222,15 @@ function toast(msg) {
   toast.t = setTimeout(() => (el.hidden = true), 2600);
 }
 
+function confirmAction(message, okLabel) {
+  const dlg = $('#confirm-dialog');
+  $('#confirm-message').textContent = message;
+  $('#confirm-ok').textContent = okLabel;
+  dlg.returnValue = '';
+  dlg.showModal();
+  return new Promise((resolve) => dlg.addEventListener('close', () => resolve(dlg.returnValue === 'ok'), { once: true }));
+}
+
 function showError(el, msg) {
   el.textContent = msg;
   el.hidden = !msg;
@@ -264,13 +278,13 @@ async function saveRecord(e) {
 }
 
 async function deleteRecord(r) {
-  if (!confirm(`Delete this record for ${r.client || 'this client'}${r.posterName ? ` by ${r.posterName}` : ''}?`)) return;
+  if (!(await confirmAction(`Delete this record for ${r.client || 'this client'}${r.posterName ? ` by ${r.posterName}` : ''}?`, 'Delete'))) return;
   try {
     await api(`/api/records/${r.id}`, { method: 'DELETE' });
     toast('Record deleted');
     await loadRecords();
   } catch (err) {
-    alert(err.message);
+    toast(err.message);
   }
 }
 
@@ -400,7 +414,7 @@ async function loadViewers() {
       del.className = 'btn small danger';
       del.textContent = 'Remove';
       del.addEventListener('click', async () => {
-        if (!confirm(`Remove viewer login "${v.username}"? They will be signed out.`)) return;
+        if (!(await confirmAction(`Remove viewer login "${v.username}"? They will be signed out.`, 'Remove'))) return;
         try {
           await api(`/api/viewers/${encodeURIComponent(v.username)}`, { method: 'DELETE' });
           await loadViewers();

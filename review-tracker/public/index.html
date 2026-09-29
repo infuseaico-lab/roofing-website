@@ -145,6 +145,17 @@
     </div>
   </dialog>
 
+  <!-- Confirm -->
+  <dialog id="confirm-dialog" class="confirm">
+    <form method="dialog">
+      <p id="confirm-message"></p>
+      <div class="dialog-actions">
+        <button class="btn ghost" value="cancel">Cancel</button>
+        <button class="btn primary danger-fill" id="confirm-ok" value="ok">Delete</button>
+      </div>
+    </form>
+  </dialog>
+
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>
