@@ -425,9 +425,9 @@ async function loadViewers() {
       const name = document.createElement('strong');
       name.textContent = v.username;
       const sees = document.createElement('span');
-      const names = v.companyIds.map((id) => companyName.get(id)).filter(Boolean);
-      sees.className = names.length ? 'muted' : 'warn';
-      sees.textContent = names.length ? `Sees: ${names.join(', ')}` : 'No company assigned. This login sees no records.';
+      const company = companyName.get(v.companyId);
+      sees.className = company ? 'muted' : 'warn';
+      sees.textContent = company ? `Sees: ${company}` : 'No company assigned. This login sees no records.';
       info.append(name, sees);
       const edit = document.createElement('button');
       edit.className = 'btn small';
@@ -455,31 +455,12 @@ async function loadViewers() {
   );
 }
 
-function renderCompanyPicks(checkedIds = []) {
-  const box = $('#viewer-companies');
-  if (!state.companies.length) {
-    const p = document.createElement('p');
-    p.className = 'muted';
-    p.textContent = 'Add a company in the Companies tab first.';
-    box.replaceChildren(p);
-    return;
-  }
-  const checked = new Set(checkedIds);
-  box.replaceChildren(
-    ...[...state.companies]
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((c) => {
-        const label = document.createElement('label');
-        label.className = 'check';
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.name = 'companyIds';
-        input.value = c.id;
-        input.checked = checked.has(c.id);
-        label.append(input, ` ${c.name}`);
-        return label;
-      }),
-  );
+function renderCompanyPicks(selectedId = '') {
+  const select = $('#viewer-company');
+  const placeholder = new Option(state.companies.length ? 'Choose a company…' : 'Add a company in the Companies tab first', '');
+  const options = [...state.companies].sort((a, b) => a.name.localeCompare(b.name)).map((c) => new Option(c.name, c.id));
+  select.replaceChildren(placeholder, ...options);
+  select.value = options.some((o) => o.value === selectedId) ? selectedId : '';
 }
 
 function resetViewerForm() {
@@ -505,7 +486,7 @@ function editViewer(v) {
   $('#viewer-form-title').textContent = `Edit ${v.username}`;
   $('#viewer-submit').textContent = 'Save changes';
   $('#viewer-cancel-edit').hidden = false;
-  renderCompanyPicks(v.companyIds);
+  renderCompanyPicks(v.companyId);
   $('#viewer-password').focus();
 }
 
@@ -513,13 +494,12 @@ async function saveViewer(e) {
   e.preventDefault();
   const form = e.target;
   showError($('#viewer-error'), '');
-  const companyIds = [...form.querySelectorAll('input[name=companyIds]:checked')].map((i) => i.value);
-  if (!companyIds.length && !(await confirmAction('No company is selected, so this login will see no records. Save anyway?', 'Save'))) return;
+  const companyId = form.elements.companyId.value;
   try {
     const password = form.elements.password.value;
     const { username, updated } = await api('/api/viewers', {
       method: 'POST',
-      body: { username: form.elements.username.value, password, companyIds },
+      body: { username: form.elements.username.value, password, companyId },
     });
     resetViewerForm();
     toast(updated ? (password ? `Saved ${username}; password changed` : `Saved ${username}`) : `Viewer login ${username} created`);

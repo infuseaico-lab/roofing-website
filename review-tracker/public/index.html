@@ -191,7 +191,7 @@
   <dialog id="viewers-dialog">
     <div class="dialog-body">
       <h2>Viewer logins</h2>
-      <p class="muted">A viewer sees only the records of the companies you assign to them, and cannot change anything.
+      <p class="muted">A viewer sees only the records of the company you assign to them, and cannot change anything.
         Send the username and password to your client.</p>
       <ul id="viewer-list" class="viewer-list"></ul>
       <form id="viewer-form" class="viewer-form">
@@ -200,10 +200,9 @@
           <label>Username <input id="viewer-username" name="username" required autocomplete="off"></label>
           <label>Password <input id="viewer-password" name="password" required autocomplete="new-password" minlength="5"></label>
         </div>
-        <fieldset class="company-picks">
-          <legend>Companies this login can see</legend>
-          <div id="viewer-companies"></div>
-        </fieldset>
+        <label>Company this login can see
+          <select id="viewer-company" name="companyId" required></select>
+        </label>
         <p class="error" id="viewer-error" role="alert" hidden></p>
         <div class="dialog-actions">
           <button type="button" class="btn ghost" id="viewer-cancel-edit" hidden>Cancel edit</button>
