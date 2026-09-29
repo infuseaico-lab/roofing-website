@@ -1,0 +1,493 @@
+const $ = (sel, root = document) => root.querySelector(sel);
+
+const COLUMNS = [
+  ['client', 'Client'],
+  ['listing', 'Listing'],
+  ['pace', 'Pace'],
+  ['review', 'Review'],
+  ['postDate', 'Post Date'],
+  ['posterName', 'Poster Name'],
+  ['reviewLink', 'Review Link'],
+  ['status', 'Status'],
+  ['paid', 'Paid'],
+];
+
+const state = {
+  user: null,
+  records: [],
+  statuses: [],
+  sort: { key: 'postDate', dir: -1 },
+  editingId: null,
+  importRows: [],
+};
+
+// ---------- api ----------
+
+async function api(path, { method = 'GET', body } = {}) {
+  const res = await fetch(path, {
+    method,
+    headers: body ? { 'Content-Type': 'application/json' } : {},
+    body: body ? JSON.stringify(body) : undefined,
+    credentials: 'same-origin',
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && path !== '/api/login') {
+    showLogin();
+    throw new Error('Your session expired. Please sign in again.');
+  }
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  return data;
+}
+
+// ---------- views ----------
+
+function showLogin() {
+  state.user = null;
+  $('#app-view').hidden = true;
+  $('#login-view').hidden = false;
+  $('#login-form').reset();
+  $('input[name=username]', $('#login-form')).focus();
+}
+
+async function showApp(user) {
+  state.user = user;
+  document.body.classList.toggle('is-admin', user.role === 'admin');
+  $('#who').textContent = `${user.username} · ${user.role === 'admin' ? 'Admin' : 'View only'}`;
+  $('#login-view').hidden = true;
+  $('#app-view').hidden = false;
+  await loadRecords();
+}
+
+async function loadRecords() {
+  const { records, statuses } = await api('/api/records');
+  state.records = records;
+  state.statuses = statuses;
+  fillSelect($('#filter-status'), statuses, 'All statuses');
+  fillSelect($('[name=status]', $('#record-form')), statuses);
+  const clients = [...new Set(records.map((r) => r.client).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  fillSelect($('#filter-client'), clients, 'All clients');
+  $('#client-options').replaceChildren(...clients.map((c) => new Option(c)));
+  render();
+}
+
+function fillSelect(select, values, allLabel) {
+  const current = select.value;
+  const opts = values.map((v) => new Option(v, v));
+  if (allLabel) opts.unshift(new Option(allLabel, ''));
+  select.replaceChildren(...opts);
+  if ([...select.options].some((o) => o.value === current)) select.value = current;
+}
+
+function filteredRecords() {
+  const q = $('#search').value.trim().toLowerCase();
+  const client = $('#filter-client').value;
+  const status = $('#filter-status').value;
+  const paid = $('#filter-paid').value;
+  const { key, dir } = state.sort;
+  return state.records
+    .filter((r) => !client || r.client === client)
+    .filter((r) => !status || r.status === status)
+    .filter((r) => !paid || (paid === 'yes') === r.paid)
+    .filter((r) => !q || COLUMNS.some(([k]) => String(r[k] ?? '').toLowerCase().includes(q)))
+    .sort((a, b) => {
+      const av = a[key] ?? '';
+      const bv = b[key] ?? '';
+      if (typeof av === 'boolean') return (Number(av) - Number(bv)) * dir;
+      return String(av).localeCompare(String(bv), undefined, { numeric: true }) * dir;
+    });
+}
+
+function render() {
+  const rows = filteredRecords();
+  const isAdmin = state.user?.role === 'admin';
+  const tbody = $('#records tbody');
+
+  tbody.replaceChildren(
+    ...rows.map((r) => {
+      const tr = document.createElement('tr');
+      tr.append(
+        cell(r.client, 'strong'),
+        cell(r.listing),
+        cell(r.pace),
+        reviewCell(r.review),
+        cell(formatDate(r.postDate), 'nowrap'),
+        cell(r.posterName),
+        linkCell(r.reviewLink),
+        statusCell(r.status),
+        paidCell(r.paid),
+      );
+      if (isAdmin) tr.append(actionsCell(r));
+      return tr;
+    }),
+  );
+
+  const empty = $('#empty');
+  empty.hidden = rows.length > 0;
+  empty.textContent = state.records.length
+    ? 'No records match these filters.'
+    : isAdmin
+      ? 'No records yet. Use “+ Add record” or “Import CSV” to get started.'
+      : 'No records yet.';
+
+  document.querySelectorAll('th[data-sort]').forEach((th) => {
+    th.setAttribute('aria-sort', th.dataset.sort === state.sort.key ? (state.sort.dir === 1 ? 'ascending' : 'descending') : 'none');
+  });
+
+  // Summary reflects the current client filter so a client-level view is easy to read.
+  const scope = $('#filter-client').value ? state.records.filter((r) => r.client === $('#filter-client').value) : state.records;
+  $('#stat-total').textContent = scope.length;
+  $('#stat-live').textContent = scope.filter((r) => r.status === 'Live').length;
+  $('#stat-pending').textContent = scope.filter((r) => r.status === 'Pending' || r.status === 'Posted').length;
+  $('#stat-unpaid').textContent = scope.filter((r) => !r.paid).length;
+}
+
+function cell(text, cls) {
+  const td = document.createElement('td');
+  td.textContent = text || '';
+  if (cls) td.className = cls;
+  return td;
+}
+
+function reviewCell(text) {
+  const td = cell(text, 'review');
+  td.title = text || '';
+  return td;
+}
+
+function linkCell(url) {
+  const td = document.createElement('td');
+  if (/^https?:\/\//i.test(url || '')) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = 'Open ↗';
+    a.title = url;
+    td.append(a);
+  } else {
+    td.textContent = url || '';
+  }
+  return td;
+}
+
+function statusCell(status) {
+  const td = document.createElement('td');
+  const span = document.createElement('span');
+  span.className = `pill status-${String(status).toLowerCase()}`;
+  span.textContent = status;
+  td.append(span);
+  return td;
+}
+
+function paidCell(paid) {
+  const td = document.createElement('td');
+  const span = document.createElement('span');
+  span.className = `pill ${paid ? 'paid' : 'unpaid'}`;
+  span.textContent = paid ? 'Paid' : 'Unpaid';
+  td.append(span);
+  return td;
+}
+
+function actionsCell(r) {
+  const td = document.createElement('td');
+  td.className = 'row-actions';
+  const edit = document.createElement('button');
+  edit.className = 'btn small';
+  edit.textContent = 'Edit';
+  edit.addEventListener('click', () => openRecordDialog(r));
+  const del = document.createElement('button');
+  del.className = 'btn small danger';
+  del.textContent = 'Delete';
+  del.addEventListener('click', () => deleteRecord(r));
+  td.append(edit, del);
+  return td;
+}
+
+function formatDate(iso) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return iso || '';
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => (el.hidden = true), 2600);
+}
+
+function showError(el, msg) {
+  el.textContent = msg;
+  el.hidden = !msg;
+}
+
+// ---------- record dialog ----------
+
+function openRecordDialog(record) {
+  const form = $('#record-form');
+  form.reset();
+  showError($('#record-error'), '');
+  state.editingId = record?.id ?? null;
+  $('#record-title').textContent = record ? 'Edit record' : 'Add record';
+  if (record) {
+    for (const [key] of COLUMNS) {
+      const input = form.elements[key];
+      if (key === 'paid') input.checked = record.paid;
+      else input.value = record[key] ?? '';
+    }
+  } else {
+    form.elements.postDate.value = new Date().toLocaleDateString('en-CA');
+    form.elements.status.value = state.statuses[0] ?? '';
+    const client = $('#filter-client').value;
+    if (client) form.elements.client.value = client;
+  }
+  $('#record-dialog').showModal();
+}
+
+async function saveRecord(e) {
+  e.preventDefault();
+  const form = e.target;
+  const body = {};
+  for (const [key] of COLUMNS) {
+    body[key] = key === 'paid' ? form.elements.paid.checked : form.elements[key].value;
+  }
+  try {
+    if (state.editingId) await api(`/api/records/${state.editingId}`, { method: 'PUT', body });
+    else await api('/api/records', { method: 'POST', body });
+    $('#record-dialog').close();
+    toast(state.editingId ? 'Record updated' : 'Record added');
+    await loadRecords();
+  } catch (err) {
+    showError($('#record-error'), err.message);
+  }
+}
+
+async function deleteRecord(r) {
+  if (!confirm(`Delete this record for ${r.client || 'this client'}${r.posterName ? ` by ${r.posterName}` : ''}?`)) return;
+  try {
+    await api(`/api/records/${r.id}`, { method: 'DELETE' });
+    toast('Record deleted');
+    await loadRecords();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+// ---------- CSV ----------
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let quoted = false;
+  text = text.replace(/^﻿/, '');
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"' && text[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else if (c === '"') quoted = false;
+      else field += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ',') {
+      row.push(field);
+      field = '';
+    } else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+    } else field += c;
+  }
+  if (field || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows.filter((r) => r.some((f) => f.trim()));
+}
+
+const HEADER_KEYS = Object.fromEntries(COLUMNS.map(([key, label]) => [label.toLowerCase().replace(/[^a-z]/g, ''), key]));
+HEADER_KEYS.place = 'pace';
+HEADER_KEYS.date = 'postDate';
+HEADER_KEYS.poster = 'posterName';
+HEADER_KEYS.link = 'reviewLink';
+
+function normalizeDate(value) {
+  const v = value.trim();
+  if (!v || /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const us = v.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/); // M/D/YYYY
+  if (us) {
+    const year = us[3].length === 2 ? `20${us[3]}` : us[3];
+    return `${year}-${us[1].padStart(2, '0')}-${us[2].padStart(2, '0')}`;
+  }
+  const d = new Date(v);
+  return isNaN(d) ? v : d.toLocaleDateString('en-CA');
+}
+
+async function previewImport() {
+  const file = $('#import-file').files[0];
+  state.importRows = [];
+  $('#import-submit').disabled = true;
+  showError($('#import-error'), '');
+  $('#import-preview').textContent = '';
+  if (!file) return;
+  const rows = parseCsv(await file.text());
+  if (rows.length < 2) return showError($('#import-error'), 'The file needs a header row and at least one record.');
+  const keys = rows[0].map((h) => HEADER_KEYS[h.toLowerCase().replace(/[^a-z]/g, '')]);
+  const matched = [...new Set(keys.filter(Boolean))];
+  if (!matched.length) return showError($('#import-error'), 'None of the column headers matched. Check the first row.');
+  state.importRows = rows.slice(1).map((cells) => {
+    const r = {};
+    keys.forEach((k, i) => k && (r[k] = cells[i] ?? ''));
+    if (r.postDate) r.postDate = normalizeDate(r.postDate);
+    return r;
+  });
+  const labels = COLUMNS.filter(([k]) => matched.includes(k)).map(([, l]) => l);
+  $('#import-preview').textContent = `${state.importRows.length} record(s) found. Columns: ${labels.join(', ')}.`;
+  $('#import-submit').disabled = false;
+}
+
+async function runImport(e) {
+  e.preventDefault();
+  try {
+    const { added } = await api('/api/records/import', { method: 'POST', body: { records: state.importRows } });
+    $('#import-dialog').close();
+    toast(`Imported ${added} record(s)`);
+    await loadRecords();
+  } catch (err) {
+    showError($('#import-error'), err.message);
+  }
+}
+
+function exportCsv() {
+  const esc = (v) => {
+    const s = String(v ?? '');
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [COLUMNS.map(([, l]) => l).join(',')];
+  for (const r of filteredRecords()) {
+    lines.push(COLUMNS.map(([k]) => esc(k === 'paid' ? (r.paid ? 'Yes' : 'No') : r[k])).join(','));
+  }
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `reviews-${new Date().toLocaleDateString('en-CA')}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ---------- viewers ----------
+
+async function loadViewers() {
+  const { viewers } = await api('/api/viewers');
+  const list = $('#viewer-list');
+  if (!viewers.length) {
+    const li = document.createElement('li');
+    li.className = 'muted';
+    li.textContent = 'No viewer logins yet.';
+    list.replaceChildren(li);
+    return;
+  }
+  list.replaceChildren(
+    ...viewers.map((v) => {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      name.textContent = v.username;
+      const del = document.createElement('button');
+      del.className = 'btn small danger';
+      del.textContent = 'Remove';
+      del.addEventListener('click', async () => {
+        if (!confirm(`Remove viewer login "${v.username}"? They will be signed out.`)) return;
+        try {
+          await api(`/api/viewers/${encodeURIComponent(v.username)}`, { method: 'DELETE' });
+          await loadViewers();
+        } catch (err) {
+          showError($('#viewer-error'), err.message);
+        }
+      });
+      li.append(name, del);
+      return li;
+    }),
+  );
+}
+
+async function saveViewer(e) {
+  e.preventDefault();
+  const form = e.target;
+  showError($('#viewer-error'), '');
+  try {
+    const { username, updated } = await api('/api/viewers', {
+      method: 'POST',
+      body: { username: form.elements.username.value, password: form.elements.password.value },
+    });
+    form.reset();
+    toast(updated ? `Password reset for ${username}` : `Viewer login ${username} created`);
+    await loadViewers();
+  } catch (err) {
+    showError($('#viewer-error'), err.message);
+  }
+}
+
+// ---------- wiring ----------
+
+$('#login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const btn = $('button[type=submit]', form);
+  btn.disabled = true;
+  showError($('#login-error'), '');
+  try {
+    const user = await api('/api/login', {
+      method: 'POST',
+      body: { username: form.elements.username.value, password: form.elements.password.value },
+    });
+    await showApp(user);
+  } catch (err) {
+    showError($('#login-error'), err.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$('#logout').addEventListener('click', async () => {
+  await api('/api/logout', { method: 'POST', body: {} }).catch(() => {});
+  showLogin();
+});
+
+['#search', '#filter-client', '#filter-status', '#filter-paid'].forEach((sel) =>
+  $(sel).addEventListener('input', render),
+);
+
+document.querySelectorAll('th[data-sort]').forEach((th) =>
+  th.addEventListener('click', () => {
+    const key = th.dataset.sort;
+    state.sort = { key, dir: state.sort.key === key ? -state.sort.dir : 1 };
+    render();
+  }),
+);
+
+$('#add-btn').addEventListener('click', () => openRecordDialog(null));
+$('#record-form').addEventListener('submit', saveRecord);
+$('#export-btn').addEventListener('click', exportCsv);
+
+$('#import-btn').addEventListener('click', () => {
+  $('#import-form').reset();
+  previewImport();
+  $('#import-dialog').showModal();
+});
+$('#import-file').addEventListener('change', previewImport);
+$('#import-form').addEventListener('submit', runImport);
+
+$('#viewers-btn').addEventListener('click', async () => {
+  showError($('#viewer-error'), '');
+  $('#viewers-dialog').showModal();
+  await loadViewers().catch((err) => showError($('#viewer-error'), err.message));
+});
+$('#viewer-form').addEventListener('submit', saveViewer);
+
+document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
+
+api('/api/me').then(showApp, () => showLogin());

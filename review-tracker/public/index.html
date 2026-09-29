@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Review Tracker</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <!-- Login -->
+  <main id="login-view" class="login" hidden>
+    <form id="login-form" class="login-card" autocomplete="on">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">★</span> Review Tracker</div>
+      <h1>Sign in</h1>
+      <label>Username
+        <input name="username" autocomplete="username" required autofocus>
+      </label>
+      <label>Password
+        <input name="password" type="password" autocomplete="current-password" required>
+      </label>
+      <p id="login-error" class="error" role="alert" hidden></p>
+      <button type="submit" class="btn primary block">Sign in</button>
+    </form>
+  </main>
+
+  <!-- App -->
+  <div id="app-view" hidden>
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">★</span> Review Tracker</div>
+      <div class="topbar-right">
+        <span id="who" class="who"></span>
+        <button id="logout" class="btn ghost">Sign out</button>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="stats" aria-label="Summary">
+        <div class="stat"><span class="stat-num" id="stat-total">0</span><span class="stat-label">Total reviews</span></div>
+        <div class="stat"><span class="stat-num" id="stat-live">0</span><span class="stat-label">Live</span></div>
+        <div class="stat"><span class="stat-num" id="stat-pending">0</span><span class="stat-label">Pending / posted</span></div>
+        <div class="stat"><span class="stat-num" id="stat-unpaid">0</span><span class="stat-label">Unpaid</span></div>
+      </section>
+
+      <section class="toolbar">
+        <div class="filters">
+          <input id="search" type="search" placeholder="Search client, listing, poster, review…" aria-label="Search">
+          <select id="filter-client" aria-label="Client"><option value="">All clients</option></select>
+          <select id="filter-status" aria-label="Status"><option value="">All statuses</option></select>
+          <select id="filter-paid" aria-label="Paid">
+            <option value="">Any payment</option>
+            <option value="yes">Paid</option>
+            <option value="no">Unpaid</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button id="export-btn" class="btn">Export CSV</button>
+          <button id="viewers-btn" class="btn admin-only">Viewer logins</button>
+          <button id="import-btn" class="btn admin-only">Import CSV</button>
+          <button id="add-btn" class="btn primary admin-only">+ Add record</button>
+        </div>
+      </section>
+
+      <div class="table-wrap">
+        <table id="records">
+          <thead>
+            <tr>
+              <th data-sort="client">Client</th>
+              <th data-sort="listing">Listing</th>
+              <th data-sort="pace">Pace</th>
+              <th data-sort="review">Review</th>
+              <th data-sort="postDate">Post date</th>
+              <th data-sort="posterName">Poster name</th>
+              <th>Review link</th>
+              <th data-sort="status">Status</th>
+              <th data-sort="paid">Paid</th>
+              <th class="admin-only"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p id="empty" class="empty" hidden></p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add / edit record -->
+  <dialog id="record-dialog">
+    <form id="record-form" method="dialog">
+      <h2 id="record-title">Add record</h2>
+      <div class="grid">
+        <label>Client <input name="client" required list="client-options"></label>
+        <label>Listing <input name="listing"></label>
+        <label>Pace <input name="pace"></label>
+        <label>Post date <input name="postDate" type="date"></label>
+        <label>Poster name <input name="posterName"></label>
+        <label>Status <select name="status"></select></label>
+        <label class="span-2">Review link <input name="reviewLink" type="url" placeholder="https://"></label>
+        <label class="span-2">Review <textarea name="review" rows="4"></textarea></label>
+        <label class="check"><input name="paid" type="checkbox"> Paid</label>
+      </div>
+      <datalist id="client-options"></datalist>
+      <p class="error" id="record-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn primary" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Import CSV -->
+  <dialog id="import-dialog">
+    <form id="import-form" method="dialog">
+      <h2>Import from CSV</h2>
+      <p class="muted">First row must be headers. Recognized columns:
+        Client, Listing, Pace, Review, Post Date, Poster Name, Review Link, Status, Paid.
+        Paid accepts Yes/No. Export from Excel or Google Sheets as CSV.</p>
+      <input id="import-file" type="file" accept=".csv,text/csv" required>
+      <p id="import-preview" class="muted"></p>
+      <p class="error" id="import-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn primary" id="import-submit" disabled>Import</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Viewer logins -->
+  <dialog id="viewers-dialog">
+    <div class="dialog-body">
+      <h2>Viewer logins</h2>
+      <p class="muted">Viewers can see every record but cannot add, edit or delete anything.
+        Send the username and password to your client. Entering an existing username resets its password.</p>
+      <ul id="viewer-list" class="viewer-list"></ul>
+      <form id="viewer-form" class="viewer-form">
+        <input name="username" placeholder="Username" required autocomplete="off">
+        <input name="password" placeholder="Password" required autocomplete="new-password" minlength="5">
+        <button class="btn primary" type="submit">Save login</button>
+      </form>
+      <p class="error" id="viewer-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-close>Done</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

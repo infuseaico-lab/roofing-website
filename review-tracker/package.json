@@ -1,0 +1,11 @@
+{
+  "name": "review-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Track Google review postings with admin and view-only logins.",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js"
+  }
+}

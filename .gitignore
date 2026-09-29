@@ -6,3 +6,4 @@ node_modules/
 dist/
 .astro/
 .impeccable/review/
+review-tracker/data/
