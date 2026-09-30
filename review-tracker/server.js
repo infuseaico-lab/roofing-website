@@ -227,6 +227,8 @@ function cleanCompany(input) {
     paymentDate: date(input?.paymentDate),
     amountPaid: Number.isFinite(amount) && amount >= 0 ? Math.round(amount * 100) / 100 : null,
     startDate: date(input?.startDate),
+    // Set when the admin starts a new package; only sent then, so ordinary edits keep it.
+    ...(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(text(input?.renewedAt)) ? { renewedAt: text(input.renewedAt) } : {}),
   };
 }
 
@@ -290,6 +292,7 @@ function me(session) {
     const viewer = db.viewers.find((v) => v.username === session.username);
     out.notificationsSeenAt = viewer?.notificationsSeenAt || viewer?.createdAt || new Date(0).toISOString();
   }
+  if (session.role === 'admin') out.notificationsSeenAt = db.adminNotificationsSeenAt || new Date(0).toISOString();
   if (session.role !== 'admin') out.companies = sessionCompanies(session);
   return out;
 }
@@ -410,8 +413,13 @@ async function handleApi(req, res, pathname) {
     return send(res, 200, { records, statuses: STATUSES, platforms: PLATFORMS, warrantyDays: WARRANTY_DAYS });
   }
 
-  // A poster opened their notifications: everything up to now is read.
-  if (pathname === '/api/notifications/seen' && method === 'POST' && !isAdmin) {
+  // Someone opened their notifications: everything up to now is read.
+  if (pathname === '/api/notifications/seen' && method === 'POST' && isAdmin) {
+    db.adminNotificationsSeenAt = new Date().toISOString();
+    saveDb();
+    return send(res, 200, { notificationsSeenAt: db.adminNotificationsSeenAt });
+  }
+  if (pathname === '/api/notifications/seen' && method === 'POST') {
     const list = session.role === 'poster' ? db.posters : db.viewers;
     const account = list.find((u) => u.username === session.username);
     if (!account) return send(res, 404, { error: 'Account not found.' });

@@ -31,6 +31,8 @@ Each record has: Client, Platform (Google, Houzz, Angi, BuildZoom, HomeAdvisor, 
 
 Each company can have a listing link per platform (Companies tab → Edit). When you add a review and choose the client and platform, that platform's listing link is filled in. Filter the Reviews table by platform, and see a **By platform** breakdown in Statistics.
 
+**Package renewals**: a company's package is the **Number of reviews** ordered, counted from its **Start date**. The Reviews column shows how many are Posted or Live in the current package. When it reaches the number ordered, the company shows *Package complete* and the admin's bell notifies them to renew with the client. Click the notification (or Edit the company) and use **Start a new package**: it sets the start date to today and clears the payment so you can enter the new one. Reviews posted before the renewal don't count toward the new package.
+
 ## Statistics and prices (admin only)
 
 The **Statistics** tab shows, for a chosen period and company: reviews posted, **charged to clients**, **paid to posters**, **owed to posters** and **profit** (charged minus paid and owed), with breakdowns by company and by poster.

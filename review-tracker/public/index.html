@@ -122,7 +122,7 @@
       <section class="stats" aria-label="Company summary">
         <div class="stat"><span class="stat-num" id="co-count">0</span><span class="stat-label">Companies</span></div>
         <div class="stat"><span class="stat-num" id="co-ordered">0</span><span class="stat-label">Reviews ordered</span></div>
-        <div class="stat"><span class="stat-num" id="co-live">0</span><span class="stat-label">Live so far</span></div>
+        <div class="stat"><span class="stat-num" id="co-live">0</span><span class="stat-label">Posted in current packages</span></div>
         <div class="stat"><span class="stat-num" id="co-paid">$0</span><span class="stat-label">Total paid</span></div>
       </section>
 
@@ -322,6 +322,7 @@
         <label>Start date <input id="co-start" name="startDate" type="date"></label>
         <label>Payment date <input id="co-paydate" name="paymentDate" type="date"></label>
       </div>
+      <button type="button" class="btn renew-btn" id="company-renew" hidden>Package complete · Start a new package</button>
       <p class="error" id="company-error" role="alert" hidden></p>
       <div class="dialog-actions">
         <button type="button" class="btn ghost" data-close>Cancel</button>

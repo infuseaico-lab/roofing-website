@@ -71,12 +71,10 @@ async function showApp(user) {
   document.body.classList.toggle('is-poster', user.role === 'poster');
   state.seenAt = user.notificationsSeenAt || '';
   clearInterval(state.pollTimer);
-  // Posters get new tasks and viewers new posts without reloading the page.
-  if (user.role !== 'admin') {
-    state.pollTimer = setInterval(() => {
-      if (document.visibilityState === 'visible' && state.user) loadRecords().catch(() => {});
-    }, 60000);
-  }
+  // Notifications (new tasks, new posts, completed packages) show up without reloading the page.
+  state.pollTimer = setInterval(() => {
+    if (document.visibilityState === 'visible' && state.user) loadRecords().catch(() => {});
+  }, 60000);
   $('#who').textContent =
     user.role === 'admin' ? `${user.username} · Admin`
     : user.role === 'poster' ? `${user.name} · Poster`
@@ -114,7 +112,7 @@ async function loadRecords() {
   $('#client-options').replaceChildren(...names.map((c) => new Option(c)));
   $('#poster-options').replaceChildren(...state.posters.map((p) => new Option(p.name, p.username)));
   render();
-  if (state.user && state.user.role !== 'admin') renderNotifications();
+  if (state.user) renderNotifications();
   if (state.user?.role === 'admin') {
     renderCompanies();
     renderPosters();
@@ -724,7 +722,21 @@ async function loadCompanies() {
 }
 
 const sameName = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
-const liveCount = (company) => state.records.filter((r) => r.status === 'Live' && sameName(r.client, company.name)).length;
+// A company's current package: its Posted/Live reviews since the package start date.
+// The package is complete once that reaches the number of reviews ordered.
+function packageProgress(company) {
+  const done = state.records
+    .filter((r) => (r.status === 'Posted' || r.status === 'Live') && sameName(r.client, company.name))
+    .filter((r) => !company.startDate || (r.postDate || '') >= company.startDate)
+    // Reviews posted before a renewal belong to the previous package, even on the same day.
+    .filter((r) => !company.renewedAt || (r.postedAt || `${r.postDate}T23:59:59.999Z`) > company.renewedAt);
+  const ordered = company.reviewCount || 0;
+  const complete = ordered > 0 && done.length >= ordered;
+  // When the package was completed: when its last needed review was posted.
+  const times = done.map((r) => r.postedAt || (r.postDate ? `${r.postDate}T00:00:00.000Z` : '')).sort();
+  return { done: done.length, ordered, complete, completedAt: complete ? times[ordered - 1] || times.at(-1) || '' : '' };
+}
+const liveCount = (company) => packageProgress(company).done;
 const money = (n) => (n == null ? '' : n.toLocaleString(undefined, { style: 'currency', currency: 'USD' }));
 
 function renderCompanies() {
@@ -756,7 +768,7 @@ function renderCompanies() {
       tr.append(
         cell(c.name, 'strong'),
         listingsCell(c.listingUrls),
-        progressCell(liveCount(c), c.reviewCount),
+        progressCell(liveCount(c), c.reviewCount, c),
         cell(formatDate(c.startDate), 'nowrap'),
         cell(formatDate(c.paymentDate), 'nowrap'),
         cell(money(c.amountPaid), 'num'),
@@ -803,12 +815,19 @@ function listingsCell(urls = {}) {
   return td;
 }
 
-function progressCell(live, ordered) {
+function progressCell(live, ordered, company) {
   const td = document.createElement('td');
   td.className = 'progress-cell';
   const label = document.createElement('span');
-  label.textContent = ordered ? `${live} of ${ordered} live` : `${live} live`;
+  label.textContent = ordered ? `${live} of ${ordered} posted` : `${live} posted`;
   td.append(label);
+  if (ordered && live >= ordered) {
+    const pill = document.createElement('span');
+    pill.className = 'pill status-live package-pill';
+    pill.textContent = 'Package complete';
+    pill.title = 'All reviews in this package are posted. Renew with the client.';
+    td.append(pill);
+  }
   if (ordered) {
     const bar = document.createElement('div');
     bar.className = 'bar';
@@ -827,6 +846,9 @@ function openCompanyDialog(company) {
   showError($('#company-error'), '');
   state.editingCompanyId = company?.id ?? null;
   $('#company-title').textContent = company ? 'Edit company' : 'Add company';
+  state.renewingAt = null;
+  const progress = company ? packageProgress(company) : null;
+  $('#company-renew').hidden = !progress?.complete;
   if (company) {
     for (const key of ['name', 'reviewCount', 'paymentDate', 'amountPaid', 'startDate']) {
       form.elements[key].value = company[key] ?? '';
@@ -854,6 +876,7 @@ async function saveCompany(e) {
   e.preventDefault();
   const form = e.target;
   const body = Object.fromEntries(['name', 'reviewCount', 'paymentDate', 'amountPaid', 'startDate'].map((k) => [k, form.elements[k].value]));
+  if (state.renewingAt) body.renewedAt = state.renewingAt;
   body.listingUrls = Object.fromEntries([...form.querySelectorAll('#co-listings input')].map((i) => [i.dataset.platform, i.value.trim()]));
   try {
     if (state.editingCompanyId) await api(`/api/companies/${state.editingCompanyId}`, { method: 'PUT', body });
@@ -1257,8 +1280,25 @@ function buildViewerNotifications() {
     .sort((a, b) => (b.unread - a.unread) || b.time.localeCompare(a.time));
 }
 
+// The admin is notified when a company's package is complete, so it can be renewed.
+function buildAdminNotifications() {
+  return state.companies
+    .map((c) => ({ c, p: packageProgress(c) }))
+    .filter(({ p }) => p.complete)
+    .map(({ c, p }) => ({
+      company: c,
+      time: p.completedAt,
+      kind: 'renew',
+      title: `${c.name}: package complete`,
+      sub: `${p.done} of ${p.ordered} reviews posted · Renew with the client`,
+      unread: p.completedAt > state.seenAt,
+    }))
+    .sort((a, b) => (b.unread - a.unread) || b.time.localeCompare(a.time));
+}
+
 function buildNotifications() {
   if (state.user?.role === 'viewer') return buildViewerNotifications();
+  if (state.user?.role === 'admin') return buildAdminNotifications();
   const me = state.user?.name;
   const items = [];
   const localMidnight = (iso) => {
@@ -1309,9 +1349,10 @@ function renderNotifications() {
   if (!items.length) {
     const li = document.createElement('li');
     li.className = 'notif-empty';
-    li.textContent = state.user?.role === 'viewer'
-      ? 'No new reviews yet. You will be notified here when a review is posted.'
-      : 'Nothing to post right now. New reviews and due dates will show up here.';
+    li.textContent = {
+      viewer: 'No new reviews yet. You will be notified here when a review is posted.',
+      admin: 'No packages to renew. You will be notified here when a company has all its reviews posted.',
+    }[state.user?.role] ?? 'Nothing to post right now. New reviews and due dates will show up here.';
     list.replaceChildren(li);
     return;
   }
@@ -1336,7 +1377,8 @@ function renderNotifications() {
       btn.append(title, sub);
       btn.addEventListener('click', () => {
         closeNotifications();
-        if (n.kind !== 'posted') openPostDialog(n.r);
+        if (n.kind === 'renew') openCompanyDialog(n.company);
+        else if (n.kind !== 'posted') openPostDialog(n.r);
         else if (!link) showRow(n.r.id);
       });
       li.append(btn);
@@ -1441,6 +1483,17 @@ $('#bulk-clear').addEventListener('click', () => {
 });
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
 $('#add-company-btn').addEventListener('click', () => openCompanyDialog(null));
+// Renewing starts a new package today: same review count, payment to fill in again.
+$('#company-renew').addEventListener('click', () => {
+  const form = $('#company-form');
+  form.elements.startDate.value = new Date().toLocaleDateString('en-CA');
+  form.elements.paymentDate.value = '';
+  form.elements.amountPaid.value = '';
+  state.renewingAt = new Date().toISOString();
+  $('#company-renew').hidden = true;
+  form.elements.reviewCount.focus();
+  toast('New package starts today. Check the number of reviews and payment, then Save.');
+});
 $('#add-poster-btn').addEventListener('click', () => openPosterDialog(null));
 $('#stats-period').addEventListener('input', renderStats);
 $('#stats-company').addEventListener('input', renderStats);
