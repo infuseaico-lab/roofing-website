@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "sfmono-regular",
+        "createdAt": "2026-10-01T19:55:40.916Z",
+        "reason": "Claude decision: rank-checker/ is a separate internal tool outside the roofing site's DESIGN.md; monospace is intentional for the keyword list textarea"
+      }
+    ]
+  }
+}

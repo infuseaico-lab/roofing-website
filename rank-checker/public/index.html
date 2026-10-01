@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rank Checker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <h1>Rank Checker</h1>
+      <p class="lede">Where does your site rank on Google? Enter a URL, paste your keywords, and check.</p>
+    </header>
+
+    <form id="form" class="panel" novalidate>
+      <label class="field">
+        <span>Website</span>
+        <input id="url" name="url" type="text" inputmode="url" placeholder="example.com" autocomplete="url" required>
+        <small>Any page on this domain counts, including subdomains.</small>
+      </label>
+
+      <label class="field">
+        <span>Keywords <em id="kwCount">0</em></span>
+        <textarea id="keywords" name="keywords" rows="8" placeholder="roof repair los angeles&#10;roof replacement cost&#10;emergency roofer near me" required></textarea>
+        <small>One per line. Duplicates are removed.</small>
+      </label>
+
+      <div class="row">
+        <label class="field">
+          <span>Country</span>
+          <select id="gl">
+            <option value="us">United States</option>
+            <option value="ca">Canada</option>
+            <option value="gb">United Kingdom</option>
+            <option value="au">Australia</option>
+            <option value="nz">New Zealand</option>
+            <option value="ie">Ireland</option>
+            <option value="in">India</option>
+            <option value="de">Germany</option>
+            <option value="fr">France</option>
+            <option value="es">Spain</option>
+            <option value="it">Italy</option>
+            <option value="nl">Netherlands</option>
+            <option value="mx">Mexico</option>
+            <option value="br">Brazil</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Language</span>
+          <select id="hl">
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="it">Italian</option>
+            <option value="nl">Dutch</option>
+            <option value="pt">Portuguese</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Search depth</span>
+          <select id="depth">
+            <option value="10">Top 10</option>
+            <option value="30">Top 30</option>
+            <option value="50">Top 50</option>
+            <option value="100" selected>Top 100</option>
+          </select>
+        </label>
+      </div>
+
+      <details class="settings" id="settings">
+        <summary>API settings</summary>
+        <p class="note" id="serverNote"></p>
+        <div class="row">
+          <label class="field">
+            <span>Provider</span>
+            <select id="provider">
+              <option value="serper">Serper.dev</option>
+              <option value="serpapi">SerpApi</option>
+              <option value="mock">Demo (fake data)</option>
+            </select>
+          </label>
+          <label class="field grow">
+            <span>API key</span>
+            <input id="apiKey" type="password" placeholder="Leave blank to use the server's key" autocomplete="off">
+          </label>
+        </div>
+        <small>A key entered here is saved in this browser only.</small>
+      </details>
+
+      <div class="actions">
+        <button type="submit" id="run" class="primary">Check rankings</button>
+        <button type="button" id="stop" class="ghost" hidden>Stop</button>
+        <p id="formError" class="error" role="alert"></p>
+      </div>
+    </form>
+
+    <section id="results" class="panel" hidden aria-live="polite">
+      <div class="results-head">
+        <div>
+          <h2>Results for <span id="resDomain"></span></h2>
+          <p id="progress" class="muted"></p>
+        </div>
+        <button type="button" id="csv" class="ghost" disabled>Download CSV</button>
+      </div>
+
+      <div class="progressbar"><div id="bar"></div></div>
+
+      <dl class="stats">
+        <div><dt>Top 3</dt><dd id="sTop3">0</dd></div>
+        <div><dt>Top 10</dt><dd id="sTop10">0</dd></div>
+        <div><dt>Ranking</dt><dd id="sRanked">0</dd></div>
+        <div><dt>Not found</dt><dd id="sMissing">0</dd></div>
+        <div><dt>Avg. position</dt><dd id="sAvg">–</dd></div>
+      </dl>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><button type="button" data-sort="keyword">Keyword</button></th>
+              <th class="num"><button type="button" data-sort="position">Position</button></th>
+              <th>Ranking page</th>
+              <th>#1 result</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>

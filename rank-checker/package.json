@@ -1,0 +1,13 @@
+{
+  "name": "rank-checker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Check where a website ranks on Google for a list of keywords.",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js",
+    "demo": "SERP_PROVIDER=mock node server.js",
+    "test": "node --test"
+  }
+}
