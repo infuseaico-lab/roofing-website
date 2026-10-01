@@ -116,7 +116,7 @@ function render() {
     ? (ranked.reduce((s, r) => s + r.position, 0) / ranked.length).toFixed(1) : '–';
 
   const errors = rows.filter((r) => r.status === 'error').length;
-  els.bar.style.width = rows.length ? (done / rows.length) * 100 + '%' : '0';
+  els.bar.style.transform = `scaleX(${rows.length ? done / rows.length : 0})`;
   els.progress.textContent = `${done} of ${rows.length} keywords checked` + (errors ? ` · ${errors} failed` : '');
   els.csv.disabled = done === 0;
 }
