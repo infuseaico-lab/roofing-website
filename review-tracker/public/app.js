@@ -434,8 +434,6 @@ function openRecordDialog(record) {
       if (key === 'paid') input.checked = record.paid;
       else input.value = record[key] ?? '';
     }
-    form.elements.clientPrice.value = record.clientPrice ?? '';
-    form.elements.posterPay.value = record.posterPay ?? '';
   } else {
     form.elements.status.value = state.statuses[0] ?? '';
     const client = $('#filter-client').value;
@@ -456,8 +454,6 @@ async function saveRecord(e) {
   for (const [key] of COLUMNS) {
     body[key] = key === 'paid' ? form.elements.paid.checked : form.elements[key].value;
   }
-  body.clientPrice = form.elements.clientPrice.value;
-  body.posterPay = form.elements.posterPay.value;
   try {
     if (state.editingId) await api(`/api/records/${state.editingId}`, { method: 'PUT', body });
     else await api('/api/records', { method: 'POST', body });
@@ -850,7 +846,7 @@ function openCompanyDialog(company) {
   const progress = company ? packageProgress(company) : null;
   $('#company-renew').hidden = !progress?.complete;
   if (company) {
-    for (const key of ['name', 'reviewCount', 'paymentDate', 'amountPaid', 'startDate']) {
+    for (const key of ['name', 'reviewCount', 'paymentDate', 'amountPaid', 'startDate', 'pricePerReview', 'posterPayPerReview']) {
       form.elements[key].value = company[key] ?? '';
     }
   } else {
@@ -875,7 +871,7 @@ function openCompanyDialog(company) {
 async function saveCompany(e) {
   e.preventDefault();
   const form = e.target;
-  const body = Object.fromEntries(['name', 'reviewCount', 'paymentDate', 'amountPaid', 'startDate'].map((k) => [k, form.elements[k].value]));
+  const body = Object.fromEntries(['name', 'reviewCount', 'paymentDate', 'amountPaid', 'startDate', 'pricePerReview', 'posterPayPerReview'].map((k) => [k, form.elements[k].value]));
   if (state.renewingAt) body.renewedAt = state.renewingAt;
   body.listingUrls = Object.fromEntries([...form.querySelectorAll('#co-listings input')].map((i) => [i.dataset.platform, i.value.trim()]));
   try {
@@ -1086,7 +1082,7 @@ const isPosterOf = (p, value) => Boolean(value) && (sameName(p.username, value) 
 const posterFor = (r) => state.posters.find((p) => isPosterOf(p, r.posterName));
 // A review's own locked-in price wins; otherwise the current company price / poster rate applies.
 const clientPriceOf = (r) => r.clientPrice ?? companyFor(r)?.pricePerReview ?? null;
-const posterPayOf = (r) => r.posterPay ?? posterFor(r)?.ratePerReview ?? null;
+const posterPayOf = (r) => r.posterPay ?? companyFor(r)?.posterPayPerReview ?? null;
 
 function statsRange(period) {
   const now = new Date();
@@ -1150,8 +1146,9 @@ function renderStats() {
     const p = list.filter((r) => isPostedStatus(r.status));
     const ch = sum(p, clientPriceOf);
     const cost = sum(list.filter((r) => r.paid), posterPayOf) + sum(p.filter((r) => !r.paid), posterPayOf);
-    const price = state.companies.find((c) => c.name === name)?.pricePerReview;
-    return [name, price == null ? '—' : money(price), String(p.length), money(ch), money(cost), money(ch - cost), ch - cost < 0];
+    const co = state.companies.find((c) => c.name === name);
+    const fmt = (v) => (v == null ? '—' : money(v));
+    return [name, co ? `${fmt(co.pricePerReview)} / ${fmt(co.posterPayPerReview)}` : '—', String(p.length), money(ch), money(cost), money(ch - cost), ch - cost < 0];
   });
   fillStatsTable('#stats-companies', companyRows, 'No reviews in this period.');
 
@@ -1178,8 +1175,7 @@ function renderStats() {
     const p = list.filter((r) => isPostedStatus(r.status));
     const paid = sum(list.filter((r) => r.paid), posterPayOf);
     const owe = sum(p.filter((r) => !r.paid), posterPayOf);
-    const rate = state.posters.find((x) => x.name === name)?.ratePerReview;
-    return [name, rate == null ? '—' : money(rate), String(p.length), money(paid + owe), money(paid), money(owe), false];
+    return [name, String(p.length), money(paid + owe), money(paid), money(owe), false];
   });
   fillStatsTable('#stats-posters', posterRows, 'No posted reviews in this period.');
 
@@ -1222,10 +1218,9 @@ function priceInput(name, id, value, group) {
   input.dataset.group = group;
   input.dataset.id = id;
   input.value = value ?? '';
-  input.setAttribute('aria-label', `${name} price per review`);
+  input.setAttribute('aria-label', `${name}: ${group === 'price' ? 'client price' : 'poster pay'} per review`);
   wrap.append('$', input);
-  label.append(span, wrap);
-  return label;
+  return wrap;
 }
 
 function renderPriceInputs() {
@@ -1233,20 +1228,36 @@ function renderPriceInputs() {
   if ($('#prices-form').contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
   const empty = (text) => Object.assign(document.createElement('p'), { className: 'muted', textContent: text });
   const companies = [...state.companies].sort((a, b) => a.name.localeCompare(b.name));
-  const posters = [...state.posters].sort((a, b) => a.name.localeCompare(b.name));
-  $('#price-companies').replaceChildren(...(companies.length
-    ? companies.map((c) => priceInput(c.name, c.id, c.pricePerReview, 'companies'))
-    : [empty('Add companies in the Companies tab.')]));
-  $('#price-posters').replaceChildren(...(posters.length
-    ? posters.map((p) => priceInput(p.name, p.id, p.ratePerReview, 'posters'))
-    : [empty('Add posters in the Posters tab.')]));
+  if (!companies.length) {
+    const tr = document.createElement('tr');
+    const td = cell('Add companies in the Companies tab.', 'muted');
+    td.colSpan = 3;
+    tr.append(td);
+    $('#price-companies').replaceChildren(tr);
+    return;
+  }
+  $('#price-companies').replaceChildren(
+    ...companies.map((c) => {
+      const tr = document.createElement('tr');
+      const price = document.createElement('td');
+      price.className = 'num';
+      price.append(priceInput(c.name, c.id, c.pricePerReview, 'price'));
+      const pay = document.createElement('td');
+      pay.className = 'num';
+      pay.append(priceInput(c.name, c.id, c.posterPayPerReview, 'posterPay'));
+      tr.append(cell(c.name, 'strong'), price, pay);
+      return tr;
+    }),
+  );
 }
 
 async function savePrices(e) {
   e.preventDefault();
-  const body = { companies: {}, posters: {}, applyToPosted: $('#prices-apply').checked };
-  for (const input of e.target.querySelectorAll('input[data-group]')) body[input.dataset.group][input.dataset.id] = input.value;
-  if (body.applyToPosted && !(await confirmAction('Replace the prices on every review already posted for these companies and posters? This changes past totals.', 'Update all'))) return;
+  const body = { companies: {}, applyToPosted: $('#prices-apply').checked };
+  for (const input of e.target.querySelectorAll('input[data-group]')) {
+    (body.companies[input.dataset.id] ??= {})[input.dataset.group] = input.value;
+  }
+  if (body.applyToPosted && !(await confirmAction('Replace the prices on every review already posted for these companies? This changes past totals.', 'Update all'))) return;
   try {
     const { updated } = await api('/api/prices', { method: 'PUT', body });
     $('#prices-apply').checked = false;

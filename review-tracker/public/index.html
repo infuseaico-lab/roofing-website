@@ -214,7 +214,7 @@
       <div class="table-wrap">
         <table id="stats-companies">
           <thead><tr>
-            <th>Company</th><th class="num">Price / review</th><th class="num">Reviews posted</th>
+            <th>Company</th><th class="num">Price / pay</th><th class="num">Reviews posted</th>
             <th class="num">Charged</th><th class="num">Poster cost</th><th class="num">Profit</th>
           </tr></thead>
           <tbody></tbody>
@@ -236,7 +236,7 @@
       <div class="table-wrap">
         <table id="stats-posters">
           <thead><tr>
-            <th>Poster</th><th class="num">Rate / review</th><th class="num">Reviews posted</th>
+            <th>Poster</th><th class="num">Reviews posted</th>
             <th class="num">Earned</th><th class="num">Paid</th><th class="num">Owed</th>
           </tr></thead>
           <tbody></tbody>
@@ -245,17 +245,13 @@
 
       <h2 class="section-title">Prices</h2>
       <form id="prices-form" class="prices">
-        <p class="muted">Prices are per review. A review keeps the prices it had when it was posted, so changing a price here
-          affects reviews posted from now on. To change one review's prices, open it with <strong>Edit</strong>.</p>
-        <div class="prices-grid">
-          <fieldset>
-            <legend>Charged to client, per company</legend>
-            <div id="price-companies" class="price-list"></div>
-          </fieldset>
-          <fieldset>
-            <legend>Paid to poster, per poster</legend>
-            <div id="price-posters" class="price-list"></div>
-          </fieldset>
+        <p class="muted">Prices are set per company, per review. A review keeps the prices it had when it was posted, so changing
+          a price here affects reviews posted from now on. You can also set them in each company's <strong>Edit</strong> window.</p>
+        <div class="table-wrap">
+          <table id="price-table">
+            <thead><tr><th>Company</th><th class="num">Client price / review</th><th class="num">Poster pay / review</th></tr></thead>
+            <tbody id="price-companies"></tbody>
+          </table>
         </div>
         <label class="check"><input type="checkbox" id="prices-apply"> Also update reviews already posted with these prices</label>
         <div class="dialog-actions">
@@ -325,6 +321,8 @@
         </fieldset>
         <label>Number of reviews <input id="co-reviews" name="reviewCount" type="number" min="0" step="1" inputmode="numeric"></label>
         <label>Amount paid ($) <input id="co-amount" name="amountPaid" type="number" min="0" step="0.01" inputmode="decimal"></label>
+        <label>Client price per review ($) <input id="co-price" name="pricePerReview" type="number" min="0" step="0.01" inputmode="decimal" placeholder="What the client is charged"></label>
+        <label>Poster pay per review ($) <input id="co-posterpay" name="posterPayPerReview" type="number" min="0" step="0.01" inputmode="decimal" placeholder="What the poster is paid"></label>
         <label>Start date <input id="co-start" name="startDate" type="date"></label>
         <label>Payment date <input id="co-paydate" name="paymentDate" type="date"></label>
       </div>
@@ -353,8 +351,6 @@
         <label class="span-2">Review link <input name="reviewLink" type="url" placeholder="https://"></label>
         <label class="span-2">Review <textarea name="review" rows="4"></textarea></label>
         <label class="span-2">Image URL <input name="imageUrl" type="url" placeholder="https:// link to the photos to post with the review"></label>
-        <label>Client price ($) <input name="clientPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Company price"></label>
-        <label>Poster pay ($) <input name="posterPay" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Poster rate"></label>
         <label class="check"><input name="paid" type="checkbox"> Poster paid</label>
       </div>
       <datalist id="client-options"></datalist>

@@ -38,9 +38,9 @@ Each company can have a listing link per platform (Companies tab → Edit). When
 The **Statistics** tab shows, for a chosen period and company: reviews posted, **charged to clients**, **paid to posters**, **owed to posters** and **profit** (charged minus paid and owed), with breakdowns by company and by poster.
 
 - *Charged* counts Posted and Live reviews at the client price. *Paid* counts reviews marked **Poster paid** (any status) at the poster pay. *Owed* counts Posted and Live reviews not yet marked Poster paid. Periods use each review's Post Date.
-- Set prices at the bottom of the tab: a price per review for each company (what the client is charged) and a rate per review for each poster (what they are paid).
-- When a review is posted, it keeps the prices in force at that moment, so later price changes only affect new reviews. Tick **Also update reviews already posted** to re-price existing ones, or change one review's **Client price** / **Poster pay** in its Edit window. Posters and viewers never see prices.
-- Poster pay and notifications are matched by the review's **Poster ID** (the poster's username; older reviews holding the poster's display name still match).
+- Prices are set per company: a **client price per review** (what the client is charged) and a **poster pay per review** (what the poster is paid). Set them in the company's Edit window or in the Prices table at the bottom of the Statistics tab.
+- When a review is posted, it keeps the company's prices in force at that moment, so later price changes only affect new reviews. Tick **Also update reviews already posted** to re-price existing ones. Editing a review never changes its prices. Posters and viewers never see prices.
+- The By poster breakdown and notifications are matched by the review's **Poster ID** (the poster's username; older reviews holding the poster's display name still match).
 
 ## Companies (admin only)
 
