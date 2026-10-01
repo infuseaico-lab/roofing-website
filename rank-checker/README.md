@@ -31,4 +31,11 @@ Any result on the entered domain or its subdomains counts (`example.com` matches
 
 ## Deploying
 
-`server.js` is a plain Node HTTP server, so it runs on any Node host (Render, Railway, Fly.io, a VPS). Set `SERP_API_KEY` as an environment variable there. Anyone who can open the page can spend your searches, so put it behind a login or keep the URL private.
+The repo root has a `render.yaml`, so on [Render](https://render.com): **New → Blueprint**, pick this repo, and fill in the two values it asks for:
+
+- `SERP_API_KEY`: your Serper.dev key.
+- `ACCESS_PASSWORD`: a password for the page. The browser asks for it on first visit; type anything as the username. Leave it blank only if the URL will stay private, since anyone who can open the page can spend your searches.
+
+Render then gives you a public URL. On the free plan the app sleeps when idle, so the first visit after a break takes about 30 seconds.
+
+`server.js` is a plain Node HTTP server, so it also runs on any other Node host (Railway, Fly.io, a VPS) with the same environment variables.

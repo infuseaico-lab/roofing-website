@@ -1,6 +1,7 @@
 // Tiny zero-dependency server: serves the UI and proxies rank checks so the
 // SERP API key never has to live in the browser.
 import { createServer } from 'node:http';
+import { timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,7 +10,9 @@ import { checkRank, normalizeDomain, PROVIDERS } from './rank.js';
 const PORT = Number(process.env.PORT) || 3000;
 const PROVIDER = (process.env.SERP_PROVIDER || 'serper').toLowerCase();
 const API_KEY = process.env.SERP_API_KEY || '';
-const PUBLIC_DIR = fileURLToPath(new URL('./public/', import.meta.url));
+// Optional: require this password (any username) via the browser's login prompt.
+const ACCESS_PASSWORD = process.env.ACCESS_PASSWORD || '';
+const PUBLIC_DIR =fileURLToPath(new URL('./public/', import.meta.url));
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml' };
 
@@ -76,7 +79,21 @@ async function serveStatic(req, res) {
   }
 }
 
+function authorized(req) {
+  if (!ACCESS_PASSWORD) return true;
+  const [scheme, encoded] = (req.headers.authorization || '').split(' ');
+  if (scheme !== 'Basic' || !encoded) return false;
+  const decoded = Buffer.from(encoded, 'base64').toString();
+  const given = Buffer.from(decoded.slice(decoded.indexOf(':') + 1));
+  const expected = Buffer.from(ACCESS_PASSWORD);
+  return given.length === expected.length && timingSafeEqual(given, expected);
+}
+
 const server = createServer((req, res) => {
+  if (!authorized(req)) {
+    res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Rank Checker"', 'Content-Type': 'text/plain' });
+    return res.end('Password required.');
+  }
   if (req.method === 'POST' && req.url === '/api/rank') return handleRank(req, res);
   if (req.method === 'GET' && req.url === '/api/config') {
     return sendJson(res, 200, { provider: PROVIDER, hasServerKey: Boolean(API_KEY), providers: PROVIDERS });

@@ -1,0 +1,15 @@
+# Render Blueprint for the rank checker (rank-checker/). The roofing site is
+# static and deploys separately. Secrets are entered in the Render dashboard.
+services:
+  - type: web
+    name: rank-checker
+    runtime: node
+    plan: free
+    rootDir: rank-checker
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: SERP_API_KEY
+        sync: false
+      - key: ACCESS_PASSWORD
+        sync: false
