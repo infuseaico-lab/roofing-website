@@ -52,11 +52,12 @@
       </div>
     </header>
 
-    <nav class="tabs admin-only" aria-label="Sections">
+    <nav class="tabs editor-only" aria-label="Sections">
       <button class="tab" data-tab="reviews" aria-current="page">Reviews</button>
-      <button class="tab" data-tab="companies">Companies</button>
-      <button class="tab" data-tab="posters">Posters</button>
-      <button class="tab" data-tab="stats">Statistics</button>
+      <button class="tab admin-only" data-tab="companies">Companies</button>
+      <button class="tab admin-only" data-tab="posters">Posters</button>
+      <button class="tab admin-only" data-tab="stats">Statistics</button>
+      <button class="tab" data-tab="credit">Credit</button>
     </nav>
 
     <main class="page" id="reviews-panel">
@@ -186,6 +187,24 @@
       </div>
     </main>
 
+    <main class="page editor-only" id="credit-panel" hidden>
+      <p class="muted panel-note" id="credit-intro"></p>
+      <section class="stats" aria-label="Credit summary" id="credit-stats"></section>
+      <section class="toolbar">
+        <div class="filters">
+          <select id="credit-filter" aria-label="Show"></select>
+          <select id="credit-poster" class="admin-only" aria-label="Poster"><option value="">All posters</option></select>
+        </div>
+      </section>
+      <div class="table-wrap">
+        <table id="credit-table">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+        <p id="credit-empty" class="empty" hidden></p>
+      </div>
+    </main>
+
     <main class="page admin-only" id="stats-panel" hidden>
       <section class="toolbar">
         <div class="filters">
@@ -237,7 +256,7 @@
         <table id="stats-posters">
           <thead><tr>
             <th>Poster</th><th class="num">Reviews posted</th>
-            <th class="num">Earned</th><th class="num">Paid</th><th class="num">Owed</th>
+            <th class="num">Earned</th><th class="num">Paid</th><th class="num">Owed</th><th class="num">Credit</th>
           </tr></thead>
           <tbody></tbody>
         </table>

@@ -111,6 +111,7 @@ label.check input { width: 18px; height: 18px; }
 /* The Reviews page has many filters: give them their own row, with the buttons below. */
 #reviews-panel .filters { flex-basis: 100%; }
 #reviews-panel .actions { margin-left: auto; }
+#credit-panel .filters select { flex: 0 1 240px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 body:not(.is-admin) .admin-only { display: none !important; }

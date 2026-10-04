@@ -48,6 +48,7 @@ function loadDb() {
     db.posters ??= [];
     // Reviews used to be Google-only, and companies had a single (Google) listing link.
     for (const r of db.records) r.platform ??= 'Google';
+    for (const r of db.records) if (r.status === 'Removed' && !r.removedAt) r.removedAt = r.updatedAt || new Date().toISOString();
     for (const c of db.companies) {
       if (!c.listingUrls) c.listingUrls = c.listingUrl ? { Google: c.listingUrl } : {};
       delete c.listingUrl;
@@ -183,7 +184,7 @@ function money(v) {
 }
 
 // Fields only the admin sees: whether the poster was paid, and the review's prices.
-const stripPrivate = ({ paid, clientPrice, posterPay, ...rest }) => rest;
+const stripPrivate = ({ paid, clientPrice, posterPay, creditSettledAt, ...rest }) => rest;
 // Clients see the name a review was posted as, never which poster posted it.
 const stripForViewer = (r) => {
   const { posterName, assignedAt, ...rest } = stripPrivate(r);
@@ -258,11 +259,24 @@ function postedAtFor(r) {
   return r.postDate && r.postDate < today() ? `${r.postDate}T00:00:00.000Z` : new Date().toISOString();
 }
 
-// Run after every save: lock in prices and note when the review was first posted.
+// Run after every save: lock in prices, note when the review was first posted, and when it
+// was removed (a paid review removed within the warranty becomes a credit the poster owes).
 function settle(r) {
   stampPrices(r);
   if (isPosted(r.status) && !r.postedAt) r.postedAt = postedAtFor(r);
+  if (r.status === 'Removed' && !r.removedAt) r.removedAt = new Date().toISOString();
+  if (r.status !== 'Removed') delete r.removedAt;
   return r;
+}
+
+// Posters see whether they were paid, and how much, on their own reviews only.
+function forPoster(username) {
+  const poster = db.posters.find((p) => p.username === username);
+  return (r) => {
+    if (!poster || !isPosterOf(poster, r.posterName)) return stripPrivate(r);
+    const { clientPrice, ...rest } = r;
+    return rest;
+  };
 }
 
 const sameName = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
@@ -414,9 +428,11 @@ async function handleApi(req, res, pathname) {
   if (pathname === '/api/records' && method === 'GET') {
     if (isAdmin) return send(res, 200, { records: db.records, statuses: STATUSES, platforms: PLATFORMS, warrantyDays: WARRANTY_DAYS });
     const names = sessionCompanies(session);
-    let records = db.records.filter((r) => names.some((n) => sameName(n, r.client)));
-    // Whether the poster was paid is for the admin only.
-    records = records.map(session.role === 'viewer' ? stripForViewer : stripPrivate);
+    const me = session.role === 'poster' ? db.posters.find((p) => p.username === session.username) : null;
+    // Posters also keep seeing their own reviews (for payments and credits) if a company is unassigned.
+    let records = db.records.filter((r) => names.some((n) => sameName(n, r.client)) || (me && isPosterOf(me, r.posterName)));
+    // Payment and prices are for the admin only; posters see their own pay.
+    records = records.map(session.role === 'viewer' ? stripForViewer : forPoster(session.username));
     return send(res, 200, { records, statuses: STATUSES, platforms: PLATFORMS, warrantyDays: WARRANTY_DAYS });
   }
 
@@ -450,7 +466,7 @@ async function handleApi(req, res, pathname) {
     Object.assign(record, { posterName, postedAs: next.postedAs, reviewLink: next.reviewLink, status: next.status, postDate, updatedAt: new Date().toISOString() });
     settle(record);
     saveDb();
-    return send(res, 200, stripPrivate(record));
+    return send(res, 200, forPoster(session.username)(record));
   }
 
   if (!isAdmin) return send(res, 403, { error: 'Your login can’t do that.' });
@@ -499,6 +515,18 @@ async function handleApi(req, res, pathname) {
     }
     saveDb();
     return send(res, 200, { updated });
+  }
+
+  // Mark a credit (paid review removed within the warranty) as made up for by the poster, or reopen it.
+  const creditMatch = pathname.match(/^\/api\/records\/([\w-]+)\/credit$/);
+  if (creditMatch && method === 'POST') {
+    const record = db.records.find((r) => r.id === creditMatch[1]);
+    if (!record) return send(res, 404, { error: 'Record not found.' });
+    const { settled } = await readJson(req);
+    if (settled) record.creditSettledAt = new Date().toISOString();
+    else delete record.creditSettledAt;
+    saveDb();
+    return send(res, 200, record);
   }
 
   const recordMatch = pathname.match(/^\/api\/records\/([\w-]+)$/);

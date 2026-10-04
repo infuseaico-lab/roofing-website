@@ -33,6 +33,13 @@ Each company can have a listing link per platform (Companies tab → Edit). When
 
 **Package renewals**: a company's package is the **Number of reviews** ordered, counted from its **Start date**. The Reviews column shows how many are Posted or Live in the current package. When it reaches the number ordered, the company shows *Package complete* and the admin's bell notifies them to renew with the client. Click the notification (or Edit the company) and use **Start a new package**: it sets the start date to today and clears the payment so you can enter the new one. Reviews posted before the renewal don't count toward the new package.
 
+## Credit (admin and posters)
+
+A **credit** is a review the poster was paid for (marked Poster paid) that was then marked **Removed** within the warranty (30 days from its Posted on date). The poster owes a replacement. The app records when a review is removed to tell.
+
+- **Admin**: the Credit tab lists every credit with the poster, dates and poster pay. Filter by owed / replaced / all and by poster, and use **Mark replaced** once the poster has made up for it (**Reopen** undoes it). Statistics → By poster has a Credit column with each poster's open credits.
+- **Posters**: the Credit tab lists every review they were paid for, with the pay. Paid reviews show **Paid**; ones removed within the warranty show **Credit** (or **Credit · replaced** once settled). Posters see pay only on their own reviews, never the client price.
+
 ## Statistics and prices (admin only)
 
 The **Statistics** tab shows, for a chosen period and company: reviews posted, **charged to clients**, **paid to posters**, **owed to posters** and **profit** (charged minus paid and owed), with breakdowns by company and by poster.

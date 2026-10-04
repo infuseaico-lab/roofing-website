@@ -118,6 +118,7 @@ async function loadRecords() {
     renderPosters();
     if (!$('#stats-panel').hidden) renderStats();
   }
+  if (!$('#credit-panel').hidden) renderCredit();
 }
 
 function fillSelect(select, values, allLabel) {
@@ -709,7 +710,9 @@ function showTab(name) {
   $('#companies-panel').hidden = name !== 'companies';
   $('#posters-panel').hidden = name !== 'posters';
   $('#stats-panel').hidden = name !== 'stats';
+  $('#credit-panel').hidden = name !== 'credit';
   if (name === 'stats') renderStats();
+  if (name === 'credit') renderCredit();
 }
 
 async function loadCompanies() {
@@ -1175,7 +1178,8 @@ function renderStats() {
     const p = list.filter((r) => isPostedStatus(r.status));
     const paid = sum(list.filter((r) => r.paid), posterPayOf);
     const owe = sum(p.filter((r) => !r.paid), posterPayOf);
-    return [name, String(p.length), money(paid + owe), money(paid), money(owe), false];
+    const credit = sum(list.filter((r) => creditInfo(r) && !r.creditSettledAt), posterPayOf);
+    return [name, String(p.length), money(paid + owe), money(paid), money(owe), money(credit), false];
   });
   fillStatsTable('#stats-posters', posterRows, 'No posted reviews in this period.');
 
@@ -1428,6 +1432,137 @@ function closeNotifications() {
   renderNotifications();
 }
 
+// ---------- credit ----------
+
+// A credit is a review the poster was paid for that was removed within the warranty:
+// the poster owes a replacement. Returns null for anything else.
+function creditInfo(r) {
+  if (!r.paid || r.status !== 'Removed') return null;
+  const removedOn = r.removedAt ? new Date(r.removedAt).toLocaleDateString('en-CA') : '';
+  const end = /^\d{4}-\d{2}-\d{2}$/.test(r.postDate || '') ? addDays(r.postDate, state.warrantyDays) : '';
+  if (end && removedOn && removedOn > end) return null;
+  return { removedOn, end, settled: Boolean(r.creditSettledAt) };
+}
+
+const pill = (text, cls) => {
+  const span = document.createElement('span');
+  span.className = `pill ${cls}`;
+  span.textContent = text;
+  return span;
+};
+
+function statTile(num, label) {
+  const div = document.createElement('div');
+  div.className = 'stat';
+  div.append(Object.assign(document.createElement('span'), { className: 'stat-num', textContent: num }),
+    Object.assign(document.createElement('span'), { className: 'stat-label', textContent: label }));
+  return div;
+}
+
+function setHead(labels) {
+  const tr = document.createElement('tr');
+  for (const [label, cls] of labels) {
+    const th = document.createElement('th');
+    th.textContent = label;
+    if (cls) th.className = cls;
+    tr.append(th);
+  }
+  $('#credit-table thead').replaceChildren(tr);
+}
+
+function renderCredit() {
+  const isAdmin = state.user?.role === 'admin';
+  const filter = $('#credit-filter');
+  const options = isAdmin
+    ? [['open', 'Credits owed'], ['settled', 'Credits replaced'], ['all', 'All credits']]
+    : [['all', 'All my paid reviews'], ['paid', 'Paid'], ['credit', 'Credit']];
+  if (filter.dataset.role !== state.user?.role) {
+    filter.replaceChildren(...options.map(([v, l]) => new Option(l, v)));
+    filter.dataset.role = state.user?.role;
+  }
+  const money0 = (n) => money(n || 0);
+
+  if (isAdmin) {
+    $('#credit-intro').textContent = `Reviews a poster was paid for that were removed within the ${state.warrantyDays}-day warranty. The poster owes a replacement. Mark it replaced once they have made up for it.`;
+    const posterSel = $('#credit-poster');
+    fillSelect(posterSel, [...new Set(state.records.filter(creditInfo).map((r) => r.posterName || 'No poster ID'))].sort(), 'All posters');
+    const all = state.records.filter(creditInfo);
+    const open = all.filter((r) => !r.creditSettledAt);
+    $('#credit-stats').replaceChildren(
+      statTile(String(open.length), 'Credits owed'),
+      statTile(money0(open.reduce((n, r) => n + (posterPayOf(r) ?? 0), 0)), 'Value owed by posters'),
+      statTile(String(all.length - open.length), 'Replaced'),
+    );
+    const rows = all
+      .filter((r) => filter.value === 'all' || (filter.value === 'settled') === Boolean(r.creditSettledAt))
+      .filter((r) => !posterSel.value || (r.posterName || 'No poster ID') === posterSel.value)
+      .sort((a, b) => (b.removedAt || '').localeCompare(a.removedAt || ''));
+    setHead([['Client'], ['Posted as'], ['Poster ID'], ['Posted on'], ['Removed on'], ['Warranty ended'], ['Poster pay', 'num'], ['Status'], ['']]);
+    $('#credit-table tbody').replaceChildren(...rows.map((r) => {
+      const c = creditInfo(r);
+      const tr = document.createElement('tr');
+      const status = document.createElement('td');
+      status.append(c.settled ? pill('Replaced', 'status-live') : pill('Owed', 'status-removed'));
+      const act = document.createElement('td');
+      act.className = 'row-actions';
+      const btn = document.createElement('button');
+      btn.className = 'btn small';
+      btn.textContent = c.settled ? 'Reopen' : 'Mark replaced';
+      btn.addEventListener('click', async () => {
+        try {
+          await api(`/api/records/${r.id}/credit`, { method: 'POST', body: { settled: !c.settled } });
+          toast(c.settled ? 'Credit reopened' : 'Credit marked replaced');
+          await loadRecords();
+        } catch (err) {
+          toast(err.message);
+        }
+      });
+      act.append(btn);
+      tr.append(clientCell(r), cell(r.postedAs), cell(r.posterName || '—'), cell(formatDate(r.postDate), 'nowrap'),
+        cell(formatDate(c.removedOn), 'nowrap'), cell(formatDate(c.end) || '—', 'nowrap'), cell(money0(posterPayOf(r)), 'num'), status, act);
+      return tr;
+    }));
+    showCreditEmpty(rows.length, all.length ? 'No credits match this filter.' : 'No credits. Paid reviews removed within the warranty will show up here.');
+    return;
+  }
+
+  // Poster: every review they were paid for; removed within the warranty means Credit.
+  $('#credit-intro').textContent = `Reviews you were paid for. If one is removed within ${state.warrantyDays} days of being posted, it becomes a credit: you owe a replacement review.`;
+  const paid = state.records.filter((r) => r.paid);
+  const credits = paid.filter((r) => creditInfo(r) && !r.creditSettledAt);
+  $('#credit-stats').replaceChildren(
+    statTile(String(paid.length), 'Paid reviews'),
+    statTile(money0(paid.reduce((n, r) => n + (r.posterPay ?? 0), 0)), 'Total paid to you'),
+    statTile(String(credits.length), 'Credits you owe'),
+    statTile(money0(credits.reduce((n, r) => n + (r.posterPay ?? 0), 0)), 'Credit value'),
+  );
+  const rows = paid
+    .filter((r) => filter.value === 'all' || (filter.value === 'credit') === Boolean(creditInfo(r)))
+    .sort((a, b) => (b.postDate || '').localeCompare(a.postDate || ''));
+  setHead([['Client'], ['Posted as'], ['Posted on'], ['Status'], ['Pay', 'num'], ['Payment']]);
+  $('#credit-table tbody').replaceChildren(...rows.map((r) => {
+    const c = creditInfo(r);
+    const tr = document.createElement('tr');
+    const pay = document.createElement('td');
+    if (!c) pay.append(pill('Paid', 'paid'));
+    else {
+      pay.append(c.settled ? pill('Credit · replaced', 'status-posted') : pill('Credit', 'status-removed'));
+      const sub = document.createElement('div');
+      sub.className = 'platform-tag';
+      sub.textContent = `Removed ${formatDate(c.removedOn)}`;
+      pay.append(sub);
+    }
+    tr.append(clientCell(r), cell(r.postedAs), cell(formatDate(r.postDate), 'nowrap'), statusCell(r.status), cell(money0(r.posterPay), 'num'), pay);
+    return tr;
+  }));
+  showCreditEmpty(rows.length, paid.length ? 'Nothing matches this filter.' : 'No paid reviews yet.');
+}
+
+function showCreditEmpty(count, text) {
+  $('#credit-empty').hidden = count > 0;
+  $('#credit-empty').textContent = text;
+}
+
 // ---------- wiring ----------
 
 $('#login-form').addEventListener('submit', async (e) => {
@@ -1494,6 +1629,8 @@ $('#bulk-clear').addEventListener('click', () => {
 });
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
 $('#add-company-btn').addEventListener('click', () => openCompanyDialog(null));
+$('#credit-filter').addEventListener('input', renderCredit);
+$('#credit-poster').addEventListener('input', renderCredit);
 // Renewing starts a new package today: same review count, payment to fill in again.
 $('#company-renew').addEventListener('click', () => {
   const form = $('#company-form');
