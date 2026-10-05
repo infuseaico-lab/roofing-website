@@ -22,6 +22,7 @@ Each record has: Client, Platform (Google, Houzz, Angi, BuildZoom, HomeAdvisor, 
 
 - **+ Add record** adds one record at a time.
 - **Import CSV** loads many at once. The first row must hold the column names above; `Paid` accepts Yes/No.
+- **Filters**: client, platform, **Poster ID** (each poster, or *No poster ID* for unassigned reviews; admin and posters only), status, warranty and payment.
 - **Export CSV** downloads whatever the current filters show.
 - **Bulk changes** (admin): tick the boxes on the left of the Reviews table (or the header box to select everything shown), then use **Mark poster paid**, **Mark poster unpaid** or **Change status to…**.
 

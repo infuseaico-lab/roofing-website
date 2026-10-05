@@ -104,6 +104,7 @@ async function loadRecords() {
   fillSelect($('#bulk-status'), statuses, 'Change status to…');
   fillSelect($('#filter-status'), statuses, 'All statuses');
   fillSelect($('#filter-platform'), state.platforms, 'All platforms');
+  fillPosterFilter();
   fillSelect($('[name=platform]', $('#record-form')), state.platforms);
   fillSelect($('[name=status]', $('#record-form')), statuses);
   const clients = [...new Set(records.map((r) => r.client).filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -121,6 +122,33 @@ async function loadRecords() {
   if (!$('#credit-panel').hidden) renderCredit();
 }
 
+// Poster ID filter: one entry per poster. Reviews holding a poster's display name (older data)
+// count as that poster; a blank Poster ID is "No poster ID".
+// Posters don't get the poster list, but they know themselves.
+const knownPosters = () => (state.user?.role === 'poster'
+  ? [{ username: state.user.username, name: state.user.name }]
+  : state.posters);
+
+function posterKey(value) {
+  if (!String(value ?? '').trim()) return '__none';
+  const known = knownPosters().find((p) => isPosterOf(p, value));
+  return (known?.username ?? String(value).trim()).toLowerCase();
+}
+
+function fillPosterFilter() {
+  const select = $('#filter-poster');
+  const current = select.value;
+  const labels = new Map();
+  for (const p of knownPosters()) labels.set(p.username.toLowerCase(), state.user?.role === 'poster' ? `Me (${p.username})` : `${p.name} (${p.username})`);
+  for (const r of state.records) {
+    const key = posterKey(r.posterName);
+    if (key !== '__none' && !labels.has(key)) labels.set(key, r.posterName.trim());
+  }
+  const options = [...labels.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, l]) => new Option(l, k));
+  select.replaceChildren(new Option('All poster IDs', ''), ...options, new Option('No poster ID', '__none'));
+  if ([...select.options].some((o) => o.value === current)) select.value = current;
+}
+
 function fillSelect(select, values, allLabel) {
   const current = select.value;
   const opts = values.map((v) => new Option(v, v));
@@ -134,6 +162,7 @@ function filteredRecords() {
   const client = $('#filter-client').value;
   const status = $('#filter-status').value;
   const platform = $('#filter-platform').value;
+  const poster = $('#filter-poster').value;
   const paid = $('#filter-paid').value;
   const warranty = $('#filter-warranty').value;
   const { key, dir } = state.sort;
@@ -141,6 +170,7 @@ function filteredRecords() {
     .filter((r) => !client || r.client === client)
     .filter((r) => !status || r.status === status)
     .filter((r) => !platform || r.platform === platform)
+    .filter((r) => !poster || posterKey(r.posterName) === poster)
     .filter((r) => !paid || (paid === 'yes') === r.paid)
     .filter((r) => !warranty || r._warranty?.kind === warranty)
     .filter((r) => !q || COLUMNS.some(([k]) => String(r[k] ?? '').toLowerCase().includes(q)))
@@ -1589,7 +1619,7 @@ $('#logout').addEventListener('click', async () => {
   showLogin();
 });
 
-['#search', '#filter-client', '#filter-platform', '#filter-status', '#filter-paid', '#filter-warranty'].forEach((sel) =>
+['#search', '#filter-client', '#filter-platform', '#filter-poster', '#filter-status', '#filter-paid', '#filter-warranty'].forEach((sel) =>
   $(sel).addEventListener('input', render),
 );
 
