@@ -217,11 +217,11 @@ function render() {
     ? 'No records match these filters.'
     : isAdmin
       ? 'No records yet. Use “+ Add record” or “Import CSV” to get started.'
-      : state.user?.companies?.length === 0
-        ? isPoster
-          ? 'No companies are assigned to you yet. Ask your manager to set it up.'
-          : 'No company is linked to this login yet. Ask your account manager to set it up.'
-        : 'No records yet.';
+      : isPoster
+        ? 'No reviews are assigned to you yet. New ones will show up here and in your notifications.'
+        : state.user?.companies?.length === 0
+          ? 'No company is linked to this login yet. Ask your account manager to set it up.'
+          : 'No records yet.';
 
   document.querySelectorAll('th[data-sort]').forEach((th) => {
     th.setAttribute('aria-sort', th.dataset.sort === state.sort.key ? (state.sort.dir === 1 ? 'ascending' : 'descending') : 'none');
@@ -1353,8 +1353,8 @@ function buildNotifications() {
   const recent = Date.now() - 14 * 86400000;
   for (const r of state.records) {
     if (r.status !== 'Pending') continue;
-    const mine = r.posterName && isPosterOf({ username: state.user.username, name: me }, r.posterName);
-    if (r.posterName && !mine) continue;
+    // The server only sends a poster the reviews assigned to them.
+    const mine = true;
     const client = r.client || 'A client';
     const added = mine && r.assignedAt > (r.createdAt || '') ? r.assignedAt : r.createdAt;
     const isNew = added && new Date(added).getTime() > recent;

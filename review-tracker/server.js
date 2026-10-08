@@ -1,6 +1,6 @@
 // Reputation Pilot: a small zero-dependency Node server.
 // Admin can add, edit, delete and import review records and manage companies, posters and viewer logins.
-// Posters can update the posting fields (poster name, review link, status) of their companies' records.
+// Posters see and update the posting fields (posted-as name, review link, status) of reviews assigned to them.
 // Viewers can only read the records of the company assigned to them.
 
 import http from 'node:http';
@@ -429,8 +429,10 @@ async function handleApi(req, res, pathname) {
     if (isAdmin) return send(res, 200, { records: db.records, statuses: STATUSES, platforms: PLATFORMS, warrantyDays: WARRANTY_DAYS });
     const names = sessionCompanies(session);
     const me = session.role === 'poster' ? db.posters.find((p) => p.username === session.username) : null;
-    // Posters also keep seeing their own reviews (for payments and credits) if a company is unassigned.
-    let records = db.records.filter((r) => names.some((n) => sameName(n, r.client)) || (me && isPosterOf(me, r.posterName)));
+    // Viewers see their company's reviews; posters see only the reviews assigned to them (their Poster ID).
+    let records = me
+      ? db.records.filter((r) => isPosterOf(me, r.posterName))
+      : db.records.filter((r) => names.some((n) => sameName(n, r.client)));
     // Payment and prices are for the admin only; posters see their own pay.
     records = records.map(session.role === 'viewer' ? stripForViewer : forPoster(session.username));
     return send(res, 200, { records, statuses: STATUSES, platforms: PLATFORMS, warrantyDays: WARRANTY_DAYS });
@@ -451,19 +453,17 @@ async function handleApi(req, res, pathname) {
     return send(res, 200, { notificationsSeenAt: account.notificationsSeenAt });
   }
 
-  // Posters update only the posting fields, and only on their companies' records.
+  // Posters update only the posting fields, and only on reviews assigned to them.
   const patchMatch = pathname.match(/^\/api\/records\/([\w-]+)$/);
   if (patchMatch && method === 'PATCH' && session.role === 'poster') {
     const record = db.records.find((r) => r.id === patchMatch[1]);
-    const names = posterCompanies(session.username);
-    if (!record || !names.some((n) => sameName(n, record.client))) return send(res, 404, { error: 'Record not found.' });
+    const me = db.posters.find((p) => p.username === session.username);
+    if (!record || !me || !isPosterOf(me, record.posterName)) return send(res, 404, { error: 'Record not found.' });
     const body = await readJson(req);
     const next = cleanRecord({ ...record, postedAs: body.postedAs, reviewLink: body.reviewLink, status: body.status });
     // Marking a review posted starts its warranty today.
     const postDate = !isPosted(record.status) && isPosted(next.status) ? today() : record.postDate || next.postDate;
-    // The poster working on an unassigned review becomes its Poster ID.
-    const posterName = record.posterName || session.username;
-    Object.assign(record, { posterName, postedAs: next.postedAs, reviewLink: next.reviewLink, status: next.status, postDate, updatedAt: new Date().toISOString() });
+    Object.assign(record, { postedAs: next.postedAs, reviewLink: next.reviewLink, status: next.status, postDate, updatedAt: new Date().toISOString() });
     settle(record);
     saveDb();
     return send(res, 200, forPoster(session.username)(record));

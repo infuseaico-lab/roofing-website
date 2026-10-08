@@ -73,7 +73,7 @@
           <input id="search" type="search" placeholder="Search client, listing, name, review…" aria-label="Search">
           <select id="filter-client" aria-label="Client"><option value="">All clients</option></select>
           <select id="filter-platform" aria-label="Platform"><option value="">All platforms</option></select>
-          <select id="filter-poster" aria-label="Poster ID" class="editor-only"><option value="">All poster IDs</option></select>
+          <select id="filter-poster" aria-label="Poster ID" class="admin-only"><option value="">All poster IDs</option></select>
           <select id="filter-status" aria-label="Status"><option value="">All statuses</option></select>
           <select id="filter-warranty" aria-label="Warranty" class="editor-only">
             <option value="">Any warranty</option>
@@ -164,8 +164,8 @@
 
     <main class="page admin-only" id="posters-panel" hidden>
       <section class="toolbar">
-        <p class="muted panel-note">Posters sign in with their own login. They see the reviews of their assigned companies and can only
-          update the poster name, review link and status.</p>
+        <p class="muted panel-note">Posters sign in with their own login. They see only the reviews whose Poster ID is theirs, and can only
+          update the posted-as name, review link and status.</p>
         <div class="actions">
           <button id="add-poster-btn" class="btn primary">+ Add poster</button>
         </div>
