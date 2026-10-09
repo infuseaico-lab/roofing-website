@@ -218,7 +218,7 @@ function render() {
     : isAdmin
       ? 'No records yet. Use “+ Add record” or “Import CSV” to get started.'
       : isPoster
-        ? 'No reviews are assigned to you yet. New ones will show up here and in your notifications.'
+        ? 'No reviews for you yet. Reviews assigned to you, and new ones for your companies, will show up here.'
         : state.user?.companies?.length === 0
           ? 'No company is linked to this login yet. Ask your account manager to set it up.'
           : 'No records yet.';
@@ -1353,8 +1353,8 @@ function buildNotifications() {
   const recent = Date.now() - 14 * 86400000;
   for (const r of state.records) {
     if (r.status !== 'Pending') continue;
-    // The server only sends a poster the reviews assigned to them.
-    const mine = true;
+    // The server sends a poster their own reviews and their companies' unassigned ones.
+    const mine = Boolean(r.posterName);
     const client = r.client || 'A client';
     const added = mine && r.assignedAt > (r.createdAt || '') ? r.assignedAt : r.createdAt;
     const isNew = added && new Date(added).getTime() > recent;
