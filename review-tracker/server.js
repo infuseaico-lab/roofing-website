@@ -61,10 +61,10 @@ function loadDb() {
     for (const r of db.records) {
       if (r.postOn === undefined) r.postOn = /^\d{4}-\d{2}-\d{2}$/.test(r.pace ?? '') ? r.pace : '';
     }
-    // Older data allowed several companies per viewer; each viewer now has exactly one.
+    // Viewers can see several companies; older data stored a single companyId.
     for (const v of db.viewers) {
-      if (!('companyId' in v)) v.companyId = v.companyIds?.[0] ?? '';
-      delete v.companyIds;
+      if (!Array.isArray(v.companyIds)) v.companyIds = v.companyId ? [v.companyId] : [];
+      delete v.companyId;
     }
     return db;
   } catch (err) {
@@ -282,12 +282,10 @@ function forPoster(username) {
 
 const sameName = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
 
-// The company name a viewer may see (as a 0- or 1-item list), read fresh on every
-// request so assignment changes apply at once.
+// The company names a viewer may see, read fresh on every request so assignment changes apply at once.
 function viewerCompanies(username) {
-  const viewer = db.viewers.find((v) => v.username === username);
-  const company = db.companies.find((c) => c.id === viewer?.companyId);
-  return company ? [company.name] : [];
+  const ids = new Set(db.viewers.find((v) => v.username === username)?.companyIds ?? []);
+  return db.companies.filter((c) => ids.has(c.id)).map((c) => c.name);
 }
 
 // Company names a poster may work on.
@@ -328,10 +326,6 @@ function posterCanSee(poster, r) {
 function cleanCompanyIds(ids) {
   const known = new Set(db.companies.map((c) => c.id));
   return [...new Set(Array.isArray(ids) ? ids.map(String) : [])].filter((id) => known.has(id));
-}
-
-function cleanCompanyId(id) {
-  return db.companies.some((c) => c.id === String(id ?? '')) ? String(id) : '';
 }
 
 // ---------- http helpers ----------
@@ -593,7 +587,7 @@ async function handleApi(req, res, pathname) {
     }
     if (method === 'DELETE') {
       const [removed] = db.companies.splice(idx, 1);
-      for (const v of db.viewers) if (v.companyId === removed.id) v.companyId = '';
+      for (const v of db.viewers) v.companyIds = (v.companyIds ?? []).filter((id) => id !== removed.id);
       for (const p of db.posters) p.companyIds = (p.companyIds ?? []).filter((id) => id !== removed.id);
       saveDb();
       return send(res, 200, { ok: true });
@@ -625,7 +619,7 @@ async function handleApi(req, res, pathname) {
 
   if (pathname === '/api/viewers' && method === 'GET') {
     return send(res, 200, {
-      viewers: db.viewers.map((v) => ({ username: v.username, companyId: cleanCompanyId(v.companyId), createdAt: v.createdAt })),
+      viewers: db.viewers.map((v) => ({ username: v.username, companyIds: cleanCompanyIds(v.companyIds), createdAt: v.createdAt })),
     });
   }
 
@@ -640,17 +634,17 @@ async function handleApi(req, res, pathname) {
     if ((!existing || password) && password.length < 5) {
       return send(res, 400, { error: 'Password must be at least 5 characters.' });
     }
-    const companyId = cleanCompanyId(body.companyId);
-    if (!companyId) return send(res, 400, { error: 'Choose the company this login can see.' });
+    const companyIds = cleanCompanyIds(body.companyIds);
+    if (!companyIds.length) return send(res, 400, { error: 'Choose at least one company this login can see.' });
     if (existing) {
-      existing.companyId = companyId;
+      existing.companyIds = companyIds;
       if (password) {
         Object.assign(existing, hashPassword(password));
         // Changing a password signs that viewer out everywhere.
         endSessions(existing.username);
       }
     } else {
-      db.viewers.push({ username, ...hashPassword(password), companyId, createdAt: new Date().toISOString() });
+      db.viewers.push({ username, ...hashPassword(password), companyIds, createdAt: new Date().toISOString() });
     }
     saveDb();
     return send(res, existing ? 200 : 201, { username: existing?.username ?? username, updated: Boolean(existing) });
