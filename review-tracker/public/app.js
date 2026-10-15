@@ -186,6 +186,7 @@ function render() {
   const rows = filteredRecords();
   const isAdmin = state.user?.role === 'admin';
   const isPoster = state.user?.role === 'poster';
+  const isViewer = state.user?.role === 'viewer';
   const tbody = $('#records tbody');
 
   tbody.replaceChildren(
@@ -197,7 +198,7 @@ function render() {
         clientCell(r),
         /^https?:\/\//i.test(r.listing || '') ? linkCell(r.listing, 'Listing ↗') : cell(r.listing),
         postOnCell(r),
-        reviewCell(r.review),
+        reviewCell(r.review, isViewer ? null : r.clientEditedAt),
         linkCell(r.imageUrl, 'View ↗'),
         cell(formatDate(r.postDate), 'nowrap'),
         postedAsCell(r, isAdmin || isPoster),
@@ -207,6 +208,7 @@ function render() {
       if (isAdmin) tr.append(paidCell(r.paid));
       if (isAdmin) tr.append(actionsCell(r));
       if (isPoster) tr.append(posterActionCell(r));
+      if (isViewer) tr.append(clientActionCell(r));
       return tr;
     }),
   );
@@ -243,7 +245,9 @@ function cell(text, cls) {
   return td;
 }
 
-function reviewCell(text) {
+// Admin and posters see a 3-line preview (full text on hover); clients see the whole review.
+// editedAt flags text the client changed, so the poster posts the latest version.
+function reviewCell(text, editedAt) {
   const td = document.createElement('td');
   td.className = 'review';
   const div = document.createElement('div');
@@ -251,7 +255,47 @@ function reviewCell(text) {
   div.textContent = text || '';
   div.title = text || '';
   td.append(div);
+  if (editedAt) {
+    const tag = document.createElement('div');
+    tag.className = 'edited-tag';
+    tag.textContent = `Edited by client ${formatDate(new Date(editedAt).toLocaleDateString('en-CA'))}`;
+    td.append(tag);
+  }
   return td;
+}
+
+function clientActionCell(r) {
+  const td = document.createElement('td');
+  td.className = 'row-actions';
+  if (r.status === 'Pending') {
+    const btn = document.createElement('button');
+    btn.className = 'btn small';
+    btn.textContent = 'Edit';
+    btn.addEventListener('click', () => openClientEdit(r));
+    td.append(btn);
+  }
+  return td;
+}
+
+function openClientEdit(r) {
+  state.clientEditId = r.id;
+  showError($('#client-edit-error'), '');
+  $('#client-edit-meta').textContent = [r.client, r.platform, r.postOn ? `Post on ${formatDate(r.postOn)}` : ''].filter(Boolean).join(' · ');
+  $('#client-edit-text').value = r.review || '';
+  $('#client-edit-dialog').showModal();
+  $('#client-edit-text').focus();
+}
+
+async function saveClientEdit(e) {
+  e.preventDefault();
+  try {
+    await api(`/api/records/${state.clientEditId}`, { method: 'PATCH', body: { review: $('#client-edit-text').value } });
+    $('#client-edit-dialog').close();
+    toast('Review updated');
+    await loadRecords();
+  } catch (err) {
+    showError($('#client-edit-error'), err.message);
+  }
 }
 
 function linkCell(url, label = 'Open ↗') {
@@ -1072,6 +1116,9 @@ function openPostDialog(r) {
   $('#post-listing').textContent = r.listing || '—';
   $('#post-on').textContent = r.postOn ? formatDate(r.postOn) : 'No date set';
   $('#post-review').textContent = r.review || 'No review text.';
+  $('#post-edited').hidden = !r.clientEditedAt;
+  $('#post-edited').textContent = r.clientEditedAt
+    ? `The client edited this text on ${formatDate(new Date(r.clientEditedAt).toLocaleDateString('en-CA'))}. Copy it again before posting.` : '';
   const img = $('#post-image');
   const hasImage = /^https?:\/\//i.test(r.imageUrl || '');
   img.href = hasImage ? r.imageUrl : '#';
@@ -1675,6 +1722,7 @@ $('#bulk-clear').addEventListener('click', () => {
 });
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
 $('#add-company-btn').addEventListener('click', () => openCompanyDialog(null));
+$('#client-edit-form').addEventListener('submit', saveClientEdit);
 $('#credit-filter').addEventListener('input', renderCredit);
 $('#credit-poster').addEventListener('input', renderCredit);
 // Renewing starts a new package today: same review count, payment to fill in again.

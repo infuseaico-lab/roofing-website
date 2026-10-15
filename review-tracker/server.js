@@ -458,6 +458,23 @@ async function handleApi(req, res, pathname) {
 
   // Posters update only the posting fields, and only on reviews in their feed.
   const patchMatch = pathname.match(/^\/api\/records\/([\w-]+)$/);
+  // Clients may rewrite the review text of their companies' reviews, only while still Pending.
+  if (patchMatch && method === 'PATCH' && session.role === 'viewer') {
+    const record = db.records.find((r) => r.id === patchMatch[1]);
+    const names = viewerCompanies(session.username);
+    if (!record || !names.some((n) => sameName(n, record.client))) return send(res, 404, { error: 'Record not found.' });
+    if (record.status !== 'Pending') return send(res, 409, { error: 'This review has already been posted, so it can no longer be changed.' });
+    const { review } = await readJson(req);
+    const text = String(review ?? '').trim().slice(0, 10000);
+    if (!text) return send(res, 400, { error: 'The review can’t be empty.' });
+    if (text !== record.review) {
+      const now = new Date().toISOString();
+      Object.assign(record, { review: text, clientEditedAt: now, updatedAt: now });
+      saveDb();
+    }
+    return send(res, 200, stripForViewer(record));
+  }
+
   if (patchMatch && method === 'PATCH' && session.role === 'poster') {
     const record = db.records.find((r) => r.id === patchMatch[1]);
     const me = db.posters.find((p) => p.username === session.username);

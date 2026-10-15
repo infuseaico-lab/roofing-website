@@ -117,7 +117,7 @@
               <th>Review link</th>
               <th data-sort="status">Status</th>
               <th data-sort="paid" class="admin-only">Poster paid</th>
-              <th class="editor-only actions-col"><span class="sr-only">Actions</span></th>
+              <th class="actions-col"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -312,6 +312,7 @@
         <div><dt>Listing</dt><dd id="post-listing"></dd></div>
         <div><dt>Post on</dt><dd id="post-on"></dd></div>
         <div class="span-2"><dt>Review to post</dt><dd><p id="post-review" class="post-review"></p>
+          <p id="post-edited" class="edited-tag" hidden></p>
           <button type="button" class="btn small" id="post-copy">Copy review text</button></dd></div>
         <div class="span-2"><dt>Warranty</dt><dd id="post-warranty"></dd></div>
         <div class="span-2" id="post-image-row"><dt>Images to post</dt><dd><a id="post-image" target="_blank" rel="noopener noreferrer"></a></dd></div>
@@ -428,6 +429,21 @@
         <button type="button" class="btn ghost" data-close>Done</button>
       </div>
     </div>
+  </dialog>
+
+  <!-- Client: edit a pending review's text -->
+  <dialog id="client-edit-dialog">
+    <form id="client-edit-form" method="dialog">
+      <h2>Edit review</h2>
+      <p class="muted" id="client-edit-meta"></p>
+      <label>Review text <textarea id="client-edit-text" name="review" rows="8" required></textarea></label>
+      <p class="muted">You can change the text until the review is posted.</p>
+      <p class="error" id="client-edit-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </form>
   </dialog>
 
   <!-- Confirm -->
