@@ -160,6 +160,7 @@ td.review { max-width: 300px; min-width: 140px; }
 /* Clients read the whole review. */
 body:not(.is-admin):not(.is-poster) .clamp { display: block; overflow: visible; white-space: pre-wrap; }
 body:not(.is-admin):not(.is-poster) td.review { min-width: 260px; max-width: 480px; }
+.field-note { margin: -6px 0 0; font-size: 13px; font-weight: 600; color: var(--pending-ink); }
 .edited-tag { margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--pending-ink); }
 td a { color: var(--accent); font-weight: 600; text-decoration: none; white-space: nowrap; }
 td a:hover { text-decoration: underline; }

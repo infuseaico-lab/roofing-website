@@ -464,12 +464,17 @@ async function handleApi(req, res, pathname) {
     const names = viewerCompanies(session.username);
     if (!record || !names.some((n) => sameName(n, record.client))) return send(res, 404, { error: 'Record not found.' });
     if (record.status !== 'Pending') return send(res, 409, { error: 'This review has already been posted, so it can no longer be changed.' });
-    const { review } = await readJson(req);
+    const { review, imageUrl } = await readJson(req);
     const text = String(review ?? '').trim().slice(0, 10000);
     if (!text) return send(res, 400, { error: 'The review can’t be empty.' });
-    if (text !== record.review) {
+    // Clients may also give a link to the photos (up to 5) to post with the review.
+    const images = imageUrl === undefined ? record.imageUrl ?? '' : String(imageUrl).trim().slice(0, 2000);
+    if (images && !/^https?:\/\/\S+$/i.test(images)) {
+      return send(res, 400, { error: 'The images link must be a web address starting with http:// or https://.' });
+    }
+    if (text !== record.review || images !== (record.imageUrl ?? '')) {
       const now = new Date().toISOString();
-      Object.assign(record, { review: text, clientEditedAt: now, updatedAt: now });
+      Object.assign(record, { review: text, imageUrl: images, clientEditedAt: now, updatedAt: now });
       saveDb();
     }
     return send(res, 200, stripForViewer(record));

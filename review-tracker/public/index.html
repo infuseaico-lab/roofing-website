@@ -437,7 +437,11 @@
       <h2>Edit review</h2>
       <p class="muted" id="client-edit-meta"></p>
       <label>Review text <textarea id="client-edit-text" name="review" rows="8" required></textarea></label>
-      <p class="muted">You can change the text until the review is posted.</p>
+      <label>Images link
+        <input id="client-edit-images" name="imageUrl" type="url" placeholder="https:// link to a folder or album with the photos">
+      </label>
+      <p class="field-note">Maximum 5 images. Share a link (e.g. Google Drive, Dropbox or Google Photos) the poster can open.</p>
+      <p class="muted">You can change the text and images until the review is posted.</p>
       <p class="error" id="client-edit-error" role="alert" hidden></p>
       <div class="dialog-actions">
         <button type="button" class="btn ghost" data-close>Cancel</button>

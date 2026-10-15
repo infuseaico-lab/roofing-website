@@ -282,6 +282,7 @@ function openClientEdit(r) {
   showError($('#client-edit-error'), '');
   $('#client-edit-meta').textContent = [r.client, r.platform, r.postOn ? `Post on ${formatDate(r.postOn)}` : ''].filter(Boolean).join(' · ');
   $('#client-edit-text').value = r.review || '';
+  $('#client-edit-images').value = r.imageUrl || '';
   $('#client-edit-dialog').showModal();
   $('#client-edit-text').focus();
 }
@@ -289,7 +290,7 @@ function openClientEdit(r) {
 async function saveClientEdit(e) {
   e.preventDefault();
   try {
-    await api(`/api/records/${state.clientEditId}`, { method: 'PATCH', body: { review: $('#client-edit-text').value } });
+    await api(`/api/records/${state.clientEditId}`, { method: 'PATCH', body: { review: $('#client-edit-text').value, imageUrl: $('#client-edit-images').value } });
     $('#client-edit-dialog').close();
     toast('Review updated');
     await loadRecords();
@@ -1118,7 +1119,7 @@ function openPostDialog(r) {
   $('#post-review').textContent = r.review || 'No review text.';
   $('#post-edited').hidden = !r.clientEditedAt;
   $('#post-edited').textContent = r.clientEditedAt
-    ? `The client edited this text on ${formatDate(new Date(r.clientEditedAt).toLocaleDateString('en-CA'))}. Copy it again before posting.` : '';
+    ? `The client edited this review on ${formatDate(new Date(r.clientEditedAt).toLocaleDateString('en-CA'))}. Check the text and images again before posting.` : '';
   const img = $('#post-image');
   const hasImage = /^https?:\/\//i.test(r.imageUrl || '');
   img.href = hasImage ? r.imageUrl : '#';
